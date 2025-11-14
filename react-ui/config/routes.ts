@@ -95,4 +95,10 @@ export default [
       },
     ]
   },
+  {
+    name: 'project',
+    path: '/project',
+    component: './Project',
+    icon: 'build',
+  },
 ];
