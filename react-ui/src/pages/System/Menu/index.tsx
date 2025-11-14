@@ -58,13 +58,19 @@ const handleRemove = async (selectedRows: API.System.Menu[]) => {
   const hide = message.loading('正在删除');
   if (!selectedRows) return true;
   try {
-    await removeMenu(selectedRows.map((row) => row.menuId).join(','));
+    const resp = await removeMenu(selectedRows.map((row) => row.menuId).join(','));
     hide();
-    message.success('删除成功，即将刷新');
-    return true;
-  } catch (error) {
+    if (resp.code === 200) {
+      message.success('删除成功，即将刷新');
+      return true;
+    } else {
+      message.error(resp.msg || '删除失败，请重试');
+      return false;
+    }
+  } catch (error: any) {
     hide();
-    message.error('删除失败，请重试');
+    const errorMsg = error?.response?.data?.msg || error?.msg || '删除失败，请重试';
+    message.error(errorMsg);
     return false;
   }
 };
@@ -74,13 +80,19 @@ const handleRemoveOne = async (selectedRow: API.System.Menu) => {
   if (!selectedRow) return true;
   try {
     const params = [selectedRow.menuId];
-    await removeMenu(params.join(','));
+    const resp = await removeMenu(params.join(','));
     hide();
-    message.success('删除成功，即将刷新');
-    return true;
-  } catch (error) {
+    if (resp.code === 200) {
+      message.success('删除成功，即将刷新');
+      return true;
+    } else {
+      message.error(resp.msg || '删除失败，请重试');
+      return false;
+    }
+  } catch (error: any) {
     hide();
-    message.error('删除失败，请重试');
+    const errorMsg = error?.response?.data?.msg || error?.msg || '删除失败，请重试';
+    message.error(errorMsg);
     return false;
   }
 };
