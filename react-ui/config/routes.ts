@@ -98,7 +98,14 @@ export default [
   {
     name: 'project',
     path: '/project',
-    component: './Project',
-    icon: 'build',
+    redirect: '/project/list',
+    routes: [
+      {
+        name: 'project.list',
+        path: '/project/list',
+        component: './Project',
+        icon: 'build',
+      },
+    ],
   },
 ];
