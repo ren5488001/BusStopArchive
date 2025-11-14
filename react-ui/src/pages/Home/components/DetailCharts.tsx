@@ -36,7 +36,7 @@ export default function DetailCharts({ data, projects }: DetailChartsProps) {
   return (
     <Row gutter={[24, 24]}>
       {/* 档案类型分布 - 饼图 */}
-      <Col xs={24} sm={12} lg={6}>
+      <Col xs={24} sm={12} lg={6} style={{ display: 'flex' }}>
         <Card
           title={
             <Space>
@@ -44,8 +44,16 @@ export default function DetailCharts({ data, projects }: DetailChartsProps) {
               <span>档案类型分布</span>
             </Space>
           }
+          style={{ width: '100%', display: 'flex', flexDirection: 'column' }}
+          styles={{
+            body: {
+              flex: 1,
+              display: 'flex',
+              flexDirection: 'column',
+            },
+          }}
         >
-          <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 16 }}>
+          <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 16, flexShrink: 0 }}>
             <div style={{ position: 'relative', width: 192, height: 192 }}>
               <svg
                 style={{ width: '100%', height: '100%', transform: 'rotate(-90deg)' }}
@@ -95,7 +103,7 @@ export default function DetailCharts({ data, projects }: DetailChartsProps) {
             </div>
           </div>
 
-          <Space direction="vertical" size="small" style={{ width: '100%' }}>
+          <Space direction="vertical" size="small" style={{ width: '100%', flex: 1 }}>
             {data.archiveTypes.map((type, index) => (
               <div
                 key={index}
@@ -126,7 +134,7 @@ export default function DetailCharts({ data, projects }: DetailChartsProps) {
       </Col>
 
       {/* 按阶段归档数量 - 柱状图 */}
-      <Col xs={24} sm={12} lg={6}>
+      <Col xs={24} sm={12} lg={6} style={{ display: 'flex' }}>
         <Card
           title={
             <Space>
@@ -134,8 +142,16 @@ export default function DetailCharts({ data, projects }: DetailChartsProps) {
               <span>按阶段归档数量</span>
             </Space>
           }
+          style={{ width: '100%', display: 'flex', flexDirection: 'column' }}
+          styles={{
+            body: {
+              flex: 1,
+              display: 'flex',
+              flexDirection: 'column',
+            },
+          }}
         >
-          <Space direction="vertical" size="middle" style={{ width: '100%' }}>
+          <Space direction="vertical" size="middle" style={{ width: '100%', flex: 1 }}>
             {data.phaseArchives.map((phase, index) => (
               <div key={index}>
                 <div
@@ -163,7 +179,7 @@ export default function DetailCharts({ data, projects }: DetailChartsProps) {
       </Col>
 
       {/* 近半年档案新增趋势 - 折线图 */}
-      <Col xs={24} sm={12} lg={6}>
+      <Col xs={24} sm={12} lg={6} style={{ display: 'flex' }}>
         <Card
           title={
             <Space>
@@ -171,8 +187,16 @@ export default function DetailCharts({ data, projects }: DetailChartsProps) {
               <span>近半年新增趋势</span>
             </Space>
           }
+          style={{ width: '100%', display: 'flex', flexDirection: 'column' }}
+          styles={{
+            body: {
+              flex: 1,
+              display: 'flex',
+              flexDirection: 'column',
+            },
+          }}
         >
-          <div style={{ position: 'relative', height: 160, marginBottom: 8 }}>
+          <div style={{ position: 'relative', height: 160, marginBottom: 8, flexShrink: 0 }}>
             <svg style={{ width: '100%', height: '100%' }} viewBox="0 0 300 120">
               {/* 网格线 */}
               {[0, 1, 2, 3, 4].map((i) => (
@@ -228,6 +252,7 @@ export default function DetailCharts({ data, projects }: DetailChartsProps) {
               justifyContent: 'space-between',
               fontSize: 12,
               color: '#8c8c8c',
+              flexShrink: 0,
             }}
           >
             {data.monthlyTrend.map((item, index) => (
@@ -238,7 +263,7 @@ export default function DetailCharts({ data, projects }: DetailChartsProps) {
       </Col>
 
       {/* 高风险项目清单 */}
-      <Col xs={24} sm={12} lg={6}>
+      <Col xs={24} sm={12} lg={6} style={{ display: 'flex' }}>
         <Card
           title={
             <Space>
@@ -246,11 +271,20 @@ export default function DetailCharts({ data, projects }: DetailChartsProps) {
               <span>高风险项目清单</span>
             </Space>
           }
+          style={{ width: '100%', display: 'flex', flexDirection: 'column' }}
+          styles={{
+            body: {
+              flex: 1,
+              display: 'flex',
+              flexDirection: 'column',
+            },
+          }}
         >
-          {highRiskProjects.length > 0 ? (
-            <List
-              dataSource={highRiskProjects.slice(0, 5)}
-              renderItem={(project, index) => (
+          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
+            {highRiskProjects.length > 0 ? (
+              <List
+                dataSource={highRiskProjects.slice(0, 5)}
+                renderItem={(project, index) => (
                 <List.Item
                   style={{
                     background: '#fff1f0',
@@ -292,17 +326,18 @@ export default function DetailCharts({ data, projects }: DetailChartsProps) {
               )}
             />
           ) : (
-            <Empty
-              image={<CheckCircleOutlined style={{ fontSize: 48, color: '#52c41a' }} />}
-              description={<span style={{ fontSize: 14, color: '#8c8c8c' }}>暂无高风险项目</span>}
-              style={{ padding: '32px 0' }}
-            />
-          )}
-          {highRiskProjects.length > 5 && (
-            <Button type="link" block style={{ marginTop: 8 }}>
-              查看全部 {highRiskProjects.length} 个高风险项目
-            </Button>
-          )}
+              <Empty
+                image={<CheckCircleOutlined style={{ fontSize: 48, color: '#52c41a' }} />}
+                description={<span style={{ fontSize: 14, color: '#8c8c8c' }}>暂无高风险项目</span>}
+                style={{ padding: '32px 0', flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}
+              />
+            )}
+            {highRiskProjects.length > 5 && (
+              <Button type="link" block style={{ marginTop: 8, flexShrink: 0 }}>
+                查看全部 {highRiskProjects.length} 个高风险项目
+              </Button>
+            )}
+          </div>
         </Card>
       </Col>
     </Row>

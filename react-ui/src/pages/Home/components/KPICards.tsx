@@ -63,21 +63,27 @@ export default function KPICards({ data }: KPICardsProps) {
   return (
     <Row gutter={[24, 24]}>
       {cards.map((card, index) => (
-        <Col xs={24} sm={12} lg={6} key={index}>
+        <Col xs={24} sm={12} lg={6} key={index} style={{ display: 'flex' }}>
           <Card
             style={{
               background: card.bgColor,
               borderColor: card.highlight ? '#faad14' : card.warning ? '#ff4d4f' : '#d9d9d9',
               borderWidth: card.highlight || card.warning ? 2 : 1,
+              width: '100%',
+              display: 'flex',
+              flexDirection: 'column',
             }}
             styles={{
               body: {
                 padding: 24,
+                flex: 1,
+                display: 'flex',
+                flexDirection: 'column',
               },
             }}
             hoverable
           >
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flex: 1 }}>
               <div style={{ flex: 1 }}>
                 <div style={{ fontSize: 14, color: '#8c8c8c', marginBottom: 8, fontWeight: 500 }}>
                   {card.title}
