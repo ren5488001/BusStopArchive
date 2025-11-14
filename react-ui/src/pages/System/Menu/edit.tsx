@@ -39,19 +39,24 @@ const MenuForm: React.FC<MenuFormProps> = (props) => {
   useEffect(() => {
     form.resetFields();
     setMenuIconName(props.values.icon);
+    
+    // 判断是否为新增模式（没有 menuId）
+    const isNew = !props.values.menuId;
+    
+    // 设置表单值，新增时使用默认值
     form.setFieldsValue({
       menuId: props.values.menuId,
       menuName: props.values.menuName,
-      parentId: props.values.parentId,
-      orderNum: props.values.orderNum,
+      parentId: props.values.parentId !== undefined ? props.values.parentId : (isNew ? 0 : undefined),
+      orderNum: props.values.orderNum !== undefined ? props.values.orderNum : (isNew ? 1 : undefined),
       path: props.values.path,
       component: props.values.component,
       query: props.values.query,
-      isFrame: props.values.isFrame,
-      isCache: props.values.isCache,
-      menuType: props.values.menuType,
-      visible: props.values.visible,
-      status: props.values.status,
+      isFrame: props.values.isFrame !== undefined ? props.values.isFrame : (isNew ? '1' : undefined),
+      isCache: props.values.isCache !== undefined ? props.values.isCache : (isNew ? '0' : undefined),
+      menuType: props.values.menuType || (isNew ? 'M' : undefined),
+      visible: props.values.visible !== undefined ? props.values.visible : (isNew ? '0' : undefined),
+      status: props.values.status !== undefined ? props.values.status : (isNew ? '0' : undefined),
       perms: props.values.perms,
       icon: props.values.icon,
       createBy: props.values.createBy,
@@ -60,6 +65,13 @@ const MenuForm: React.FC<MenuFormProps> = (props) => {
       updateTime: props.values.updateTime,
       remark: props.values.remark,
     });
+    
+    // 设置菜单类型状态，新增时默认为 'M'
+    if (isNew && !props.values.menuType) {
+      setMenuTypeId('M');
+    } else if (props.values.menuType) {
+      setMenuTypeId(props.values.menuType);
+    }
   }, [form, props]);
 
   const intl = useIntl();
@@ -91,7 +103,16 @@ const MenuForm: React.FC<MenuFormProps> = (props) => {
         grid={true}
         submitter={false}
         layout="horizontal"
-        onFinish={handleFinish}>
+        onFinish={handleFinish}
+        initialValues={{
+          parentId: props.values.parentId !== undefined ? props.values.parentId : (!props.values.menuId ? 0 : undefined),
+          menuType: props.values.menuType || (!props.values.menuId ? 'M' : undefined),
+          orderNum: props.values.orderNum !== undefined ? props.values.orderNum : (!props.values.menuId ? 1 : undefined),
+          isFrame: props.values.isFrame !== undefined ? props.values.isFrame : (!props.values.menuId ? '1' : undefined),
+          isCache: props.values.isCache !== undefined ? props.values.isCache : (!props.values.menuId ? '0' : undefined),
+          visible: props.values.visible !== undefined ? props.values.visible : (!props.values.menuId ? '0' : undefined),
+          status: props.values.status !== undefined ? props.values.status : (!props.values.menuId ? '0' : undefined),
+        }}>
         <ProFormDigit
           name="menuId"
           label={intl.formatMessage({
@@ -125,9 +146,6 @@ const MenuForm: React.FC<MenuFormProps> = (props) => {
               message: <FormattedMessage id="请输入父菜单编号！" defaultMessage="请输入父菜单编号！" />,
             },
           ]}
-          fieldProps = {{
-            defaultValue: 0
-          }}
         />
         <ProFormRadio.Group
           name="menuType"
@@ -148,7 +166,6 @@ const MenuForm: React.FC<MenuFormProps> = (props) => {
             },
           ]}
           fieldProps={{
-            defaultValue: 'M',
             onChange: (e) => {
               setMenuTypeId(e.target.value);
             },
@@ -206,9 +223,6 @@ const MenuForm: React.FC<MenuFormProps> = (props) => {
               message: <FormattedMessage id="请输入显示顺序！" defaultMessage="请输入显示顺序！" />,
             },
           ]}
-          fieldProps = {{
-            defaultValue: 1
-          }}
         />
         <ProFormRadio.Group
           name="isFrame"
@@ -216,7 +230,6 @@ const MenuForm: React.FC<MenuFormProps> = (props) => {
             0: '是',
             1: '否',
           }}
-          initialValue="1"
           label={intl.formatMessage({
             id: 'system.menu.is_frame',
             defaultMessage: '是否为外链',
@@ -230,9 +243,6 @@ const MenuForm: React.FC<MenuFormProps> = (props) => {
               message: <FormattedMessage id="请输入是否为外链！" defaultMessage="请输入是否为外链！" />,
             },
           ]}
-          fieldProps = {{
-            defaultValue: '1'
-          }}
         />
         <ProFormText
           name="path"
@@ -318,9 +328,6 @@ const MenuForm: React.FC<MenuFormProps> = (props) => {
               message: <FormattedMessage id="请输入是否缓存！" defaultMessage="请输入是否缓存！" />,
             },
           ]}
-          fieldProps = {{
-            defaultValue: 0
-          }}
         />
         <ProFormRadio.Group
           name="visible"
@@ -338,9 +345,6 @@ const MenuForm: React.FC<MenuFormProps> = (props) => {
               message: <FormattedMessage id="请输入显示状态！" defaultMessage="请输入显示状态！" />,
             },
           ]}
-          fieldProps = {{
-            defaultValue: '0'
-          }}
         />
         <ProFormRadio.Group
           valueEnum={statusOptions}
@@ -358,9 +362,6 @@ const MenuForm: React.FC<MenuFormProps> = (props) => {
               message: <FormattedMessage id="请输入菜单状态！" defaultMessage="请输入菜单状态！" />,
             },
           ]}
-          fieldProps = {{
-            defaultValue: '0'
-          }}
         />
       </ProForm>
       <Modal
