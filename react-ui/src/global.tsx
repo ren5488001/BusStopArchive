@@ -1,4 +1,5 @@
 import { useIntl } from '@umijs/max';
+import 'remixicon/fonts/remixicon.css';
 import { Button, message, notification } from 'antd';
 import defaultSettings from '../config/defaultSettings';
 

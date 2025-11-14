@@ -13,7 +13,13 @@
 export default [
   {
     path: '/',
-    redirect: '/account/center',
+    redirect: '/home',
+  },
+  {
+    name: 'home',
+    path: '/home',
+    component: './Home',
+    icon: 'home',
   },
   {
     path: '*',
