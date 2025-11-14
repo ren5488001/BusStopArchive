@@ -72,7 +72,7 @@ public class SysDictDataController extends BaseController
     /**
      * 根据字典类型查询字典数据信息
      */
-    @GetMapping(value = "/type/{dictType}")
+    @GetMapping(value = "/type/{dictType}", produces = "application/json;charset=UTF-8")
     public AjaxResult dictType(@PathVariable String dictType)
     {
         List<SysDictData> data = dictTypeService.selectDictDataByType(dictType);
