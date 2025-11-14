@@ -7,20 +7,11 @@ echo "=========================================="
 echo "若依项目数据库初始化脚本"
 echo "=========================================="
 
-# 数据库配置（请根据实际情况修改）
+# 数据库配置
 DB_HOST="localhost"
 DB_PORT="3306"
 DB_USER="root"
-# 从配置文件读取密码，如果配置文件不存在则使用空密码
-if [ -f "ruoyi-admin/src/main/resources/application-druid.yml" ]; then
-    DB_PASSWORD=$(grep -A 2 "master:" ruoyi-admin/src/main/resources/application-druid.yml | grep "password:" | awk '{print $2}' | tr -d '\r')
-    if [ -z "$DB_PASSWORD" ] || [ "$DB_PASSWORD" = "password" ]; then
-        # 如果密码是默认值或空，尝试空密码
-        DB_PASSWORD=""
-    fi
-else
-    DB_PASSWORD=""
-fi
+DB_PASSWORD="root"
 DB_NAME="ry-vue"
 
 # 检查 MySQL 是否可用
