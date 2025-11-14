@@ -1,10 +1,14 @@
-
 import { useState, useEffect } from 'react';
+import { PageContainer } from '@ant-design/pro-components';
+import { Card, Row, Col, Button, Space, Typography } from 'antd';
+import { DashboardOutlined, ReloadOutlined } from '@ant-design/icons';
 import KPICards from './components/KPICards';
 import GISMap from './components/GISMap';
 import ArchiveOverview from './components/ArchiveOverview';
 import DetailCharts from './components/DetailCharts';
 import { mockProjects, mockArchiveData } from '../../mocks/dashboardData';
+
+const { Title } = Typography;
 
 export default function Home() {
   const [selectedProject, setSelectedProject] = useState(mockProjects[0]);
@@ -37,62 +41,90 @@ export default function Home() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 flex flex-col">
-      {/* 顶部导航 */}
-      <header className="bg-white shadow-sm border-b flex-shrink-0">
-        <div className="px-6 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-4">
-              <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
-                <i className="ri-dashboard-3-line text-white text-lg"></i>
+    <PageContainer
+      header={{
+        title: false,
+      }}
+      style={{
+        background: 'linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%)',
+        minHeight: '100vh',
+        padding: 0,
+      }}
+    >
+      <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
+        {/* 顶部导航 */}
+        <Card
+          style={{
+            borderRadius: 0,
+            borderLeft: 'none',
+            borderRight: 'none',
+            borderTop: 'none',
+            marginBottom: 0,
+          }}
+          styles={{ body: { padding: '16px 24px' } }}
+        >
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <Space size="middle">
+              <div
+                style={{
+                  width: 32,
+                  height: 32,
+                  background: '#1890ff',
+                  borderRadius: 8,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}
+              >
+                <DashboardOutlined style={{ color: '#fff', fontSize: 18 }} />
               </div>
-              <h1 className="text-2xl font-bold text-gray-900">智能档案管理驾驶舱</h1>
-            </div>
-            <div className="flex items-center space-x-4">
-              <div className="text-sm text-gray-500">
+              <Title level={2} style={{ margin: 0, fontSize: 24, fontWeight: 'bold' }}>
+                智能档案管理驾驶舱
+              </Title>
+            </Space>
+            <Space size="middle">
+              <span style={{ fontSize: 14, color: '#8c8c8c' }}>
                 最后更新: {new Date().toLocaleString('zh-CN')}
-              </div>
-              <button className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
-                <i className="ri-refresh-line mr-2"></i>
+              </span>
+              <Button type="primary" icon={<ReloadOutlined />}>
                 刷新数据
-              </button>
-            </div>
+              </Button>
+            </Space>
+          </div>
+        </Card>
+
+        {/* 主要内容区域 */}
+        <div style={{ flex: 1, padding: 24, display: 'flex', flexDirection: 'column', gap: 24, minHeight: 0 }}>
+          {/* 第一层：KPI卡片区域 */}
+          <div style={{ flexShrink: 0 }}>
+            <KPICards data={kpiData} />
+          </div>
+
+          {/* 第二层：中央核心区域 */}
+          <div style={{ flex: 1, minHeight: 0 }}>
+            <Row gutter={24} style={{ height: '100%' }}>
+              {/* GIS地图 */}
+              <Col xs={24} lg={16} style={{ height: '100%', minHeight: 0 }}>
+                <GISMap 
+                  projects={mockProjects}
+                  selectedProject={selectedProject}
+                  onProjectSelect={handleProjectSelect}
+                />
+              </Col>
+
+              {/* 档案完整度概览 */}
+              <Col xs={24} lg={8} style={{ height: '100%', minHeight: 0 }}>
+                <ArchiveOverview project={selectedProject} />
+              </Col>
+            </Row>
+          </div>
+
+          {/* 第三层：底部详细统计图表 */}
+          <div style={{ flexShrink: 0 }}>
+            <DetailCharts data={mockArchiveData} projects={mockProjects} />
           </div>
         </div>
-      </header>
-
-      {/* 主要内容区域 */}
-      <main className="flex-1 p-6 flex flex-col space-y-6 min-h-0">
-        {/* 第一层：KPI卡片区域 */}
-        <div className="flex-shrink-0">
-          <KPICards data={kpiData} />
-        </div>
-
-        {/* 第二层：中央核心区域 */}
-        <div className="flex-1 min-h-0">
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 h-full">
-            {/* GIS地图 */}
-            <div className="lg:col-span-2 min-h-0">
-              <GISMap 
-                projects={mockProjects}
-                selectedProject={selectedProject}
-                onProjectSelect={handleProjectSelect}
-              />
-            </div>
-
-            {/* 档案完整度概览 */}
-            <div className="lg:col-span-1 min-h-0">
-              <ArchiveOverview project={selectedProject} />
-            </div>
-          </div>
-        </div>
-
-        {/* 第三层：底部详细统计图表 */}
-        <div className="flex-shrink-0">
-          <DetailCharts data={mockArchiveData} projects={mockProjects} />
-        </div>
-      </main>
-    </div>
+      </div>
+    </PageContainer>
   );
 }
-

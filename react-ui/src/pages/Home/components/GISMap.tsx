@@ -1,4 +1,12 @@
 import { useState } from 'react';
+import { Card, Space, Button, Tooltip, Tag } from 'antd';
+import {
+  GlobalOutlined,
+  PlusOutlined,
+  MinusOutlined,
+  ExpandOutlined,
+  EnvironmentOutlined,
+} from '@ant-design/icons';
 
 interface Project {
   id: string;
@@ -22,139 +30,194 @@ export default function GISMap({ projects, selectedProject, onProjectSelect }: G
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case '已竣工': return 'bg-blue-500 border-blue-600';
-      case '在建中': return 'bg-green-500 border-green-600';
-      case '已暂停': return 'bg-gray-400 border-gray-500';
-      default: return 'bg-blue-500 border-blue-600';
+      case '已竣工': return { bg: '#1890ff', border: '#096dd9' };
+      case '在建中': return { bg: '#52c41a', border: '#389e0d' };
+      case '已暂停': return { bg: '#d9d9d9', border: '#bfbfbf' };
+      default: return { bg: '#1890ff', border: '#096dd9' };
     }
   };
 
   const getCompletenessColor = (completeness: number) => {
-    if (completeness >= 90) return 'text-green-600';
-    if (completeness >= 70) return 'text-yellow-600';
-    return 'text-red-600';
+    if (completeness >= 90) return '#52c41a';
+    if (completeness >= 70) return '#faad14';
+    return '#ff4d4f';
   };
 
   return (
-    <div className="bg-white rounded-xl shadow-sm border border-gray-200 h-full flex flex-col">
-      <div className="p-4 border-b border-gray-200 flex-shrink-0">
-        <div className="flex items-center justify-between">
-          <h3 className="text-lg font-semibold text-gray-900 flex items-center">
-            <i className="ri-map-2-line mr-2 text-blue-600"></i>
-            项目地理分布图
-          </h3>
-          <div className="flex items-center space-x-4">
-            <div className="flex items-center space-x-2 text-sm">
-              <div className="flex items-center space-x-1">
-                <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
-                <span>已竣工</span>
-              </div>
-              <div className="flex items-center space-x-1">
-                <div className="w-3 h-3 bg-green-500 rounded-full"></div>
-                <span>在建中</span>
-              </div>
-              <div className="flex items-center space-x-1">
-                <div className="w-3 h-3 bg-gray-400 rounded-full"></div>
-                <span>已暂停</span>
-              </div>
-            </div>
-            <div className="flex items-center space-x-2">
-              <button 
-                onClick={() => setZoomLevel(prev => Math.min(prev + 1, 18))}
-                className="p-1 hover:bg-gray-100 rounded"
-              >
-                <i className="ri-add-line text-gray-600"></i>
-              </button>
-              <button 
-                onClick={() => setZoomLevel(prev => Math.max(prev - 1, 1))}
-                className="p-1 hover:bg-gray-100 rounded"
-              >
-                <i className="ri-subtract-line text-gray-600"></i>
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div className="relative flex-1 min-h-0">
+    <Card
+      title={
+        <Space>
+          <GlobalOutlined style={{ color: '#1890ff' }} />
+          <span>项目地理分布图</span>
+        </Space>
+      }
+      extra={
+        <Space>
+          <Space size="small">
+            <Tag color="blue">
+              <span style={{ display: 'inline-block', width: 8, height: 8, background: '#1890ff', borderRadius: '50%', marginRight: 4 }} />
+              已竣工
+            </Tag>
+            <Tag color="green">
+              <span style={{ display: 'inline-block', width: 8, height: 8, background: '#52c41a', borderRadius: '50%', marginRight: 4 }} />
+              在建中
+            </Tag>
+            <Tag>
+              <span style={{ display: 'inline-block', width: 8, height: 8, background: '#d9d9d9', borderRadius: '50%', marginRight: 4 }} />
+              已暂停
+            </Tag>
+          </Space>
+          <Button
+            type="text"
+            icon={<PlusOutlined />}
+            onClick={() => setZoomLevel(prev => Math.min(prev + 1, 18))}
+          />
+          <Button
+            type="text"
+            icon={<MinusOutlined />}
+            onClick={() => setZoomLevel(prev => Math.max(prev - 1, 1))}
+          />
+        </Space>
+      }
+      styles={{
+        body: {
+          flex: 1,
+          padding: 0,
+          position: 'relative',
+          minHeight: 0,
+          display: 'flex',
+          flexDirection: 'column',
+        },
+      }}
+      style={{ height: '100%', display: 'flex', flexDirection: 'column' }}
+    >
+      <div style={{ position: 'relative', flex: 1, minHeight: 0 }}>
         {/* 地图背景 */}
-        <div 
-          className="w-full h-full bg-gradient-to-br from-blue-100 to-green-100 relative overflow-hidden"
+        <div
           style={{
+            width: '100%',
+            height: '100%',
+            background: 'linear-gradient(135deg, #e6f7ff 0%, #bae7ff 100%)',
+            position: 'relative',
+            overflow: 'hidden',
             backgroundImage: `url('https://readdy.ai/api/search-image?query=Modern%20city%20map%20view%20with%20clean%20streets%20and%20buildings%2C%20aerial%20perspective%2C%20minimalist%20design%2C%20light%20blue%20and%20green%20color%20scheme%2C%20urban%20planning%20visualization%2C%20geographic%20information%20system%20interface%2C%20professional%20dashboard%20background&width=800&height=600&seq=map001&orientation=landscape')`,
             backgroundSize: 'cover',
-            backgroundPosition: 'center'
+            backgroundPosition: 'center',
           }}
         >
           {/* 地图控件 */}
-          <div className="absolute top-4 right-4 bg-white rounded-lg shadow-md p-2 space-y-2">
-            <button className="block w-8 h-8 hover:bg-gray-100 rounded flex items-center justify-center">
-              <i className="ri-navigation-line text-gray-600"></i>
-            </button>
-            <button className="block w-8 h-8 hover:bg-gray-100 rounded flex items-center justify-center">
-              <i className="ri-fullscreen-line text-gray-600"></i>
-            </button>
+          <div style={{ position: 'absolute', top: 16, right: 16, background: '#fff', borderRadius: 8, padding: 8, boxShadow: '0 2px 8px rgba(0,0,0,0.15)' }}>
+            <Space direction="vertical" size="small">
+              <Button
+                type="text"
+                icon={<EnvironmentOutlined />}
+                style={{ display: 'block', width: 32, height: 32 }}
+              />
+              <Button
+                type="text"
+                icon={<ExpandOutlined />}
+                style={{ display: 'block', width: 32, height: 32 }}
+              />
+            </Space>
           </div>
 
           {/* 项目标记点 */}
-          {projects.map((project, index) => (
-            <div
-              key={project.id}
-              className="absolute cursor-pointer transform -translate-x-1/2 -translate-y-1/2 group"
-              style={{
-                left: `${20 + (index % 5) * 15}%`,
-                top: `${25 + Math.floor(index / 5) * 20}%`
-              }}
-              onClick={() => onProjectSelect(project)}
-            >
-              {/* 标记点 */}
-              <div className={`w-4 h-4 rounded-full border-2 ${getStatusColor(project.status)} 
-                ${selectedProject.id === project.id ? 'ring-4 ring-blue-200 scale-125' : 'hover:scale-110'} 
-                transition-all duration-200 shadow-lg`}>
-              </div>
-              
-              {/* 悬浮信息卡片 */}
-              <div className="absolute bottom-6 left-1/2 transform -translate-x-1/2 opacity-0 group-hover:opacity-100 
-                transition-opacity duration-200 pointer-events-none z-10">
-                <div className="bg-white rounded-lg shadow-lg p-3 min-w-48 border">
-                  <div className="text-sm font-medium text-gray-900 mb-1">{project.name}</div>
-                  <div className="text-xs text-gray-600 mb-2">{project.location}</div>
-                  <div className="flex items-center justify-between text-xs">
-                    <span className="text-gray-500">完整度:</span>
-                    <span className={`font-medium ${getCompletenessColor(project.completeness)}`}>
-                      {project.completeness}%
-                    </span>
-                  </div>
-                  <div className="flex items-center justify-between text-xs mt-1">
-                    <span className="text-gray-500">状态:</span>
-                    <span className="font-medium">{project.status}</span>
-                  </div>
+          {projects.map((project, index) => {
+            const statusColor = getStatusColor(project.status);
+            const isSelected = selectedProject.id === project.id;
+            return (
+              <div
+                key={project.id}
+                style={{
+                  position: 'absolute',
+                  left: `${20 + (index % 5) * 15}%`,
+                  top: `${25 + Math.floor(index / 5) * 20}%`,
+                  transform: 'translate(-50%, -50%)',
+                  cursor: 'pointer',
+                  zIndex: isSelected ? 10 : 1,
+                }}
+                onClick={() => onProjectSelect(project)}
+                onMouseEnter={(e) => {
+                  const tooltip = e.currentTarget.querySelector('.project-tooltip') as HTMLElement;
+                  if (tooltip) tooltip.style.opacity = '1';
+                }}
+                onMouseLeave={(e) => {
+                  const tooltip = e.currentTarget.querySelector('.project-tooltip') as HTMLElement;
+                  if (tooltip) tooltip.style.opacity = '0';
+                }}
+              >
+                {/* 标记点 */}
+                <div
+                  style={{
+                    width: isSelected ? 20 : 16,
+                    height: isSelected ? 20 : 16,
+                    borderRadius: '50%',
+                    background: statusColor.bg,
+                    border: `2px solid ${statusColor.border}`,
+                    boxShadow: isSelected ? '0 0 0 4px rgba(24, 144, 255, 0.2)' : '0 2px 8px rgba(0,0,0,0.15)',
+                    transition: 'all 0.2s',
+                  }}
+                />
+
+                {/* 悬浮信息卡片 */}
+                <div
+                  className="project-tooltip"
+                  style={{
+                    position: 'absolute',
+                    bottom: 24,
+                    left: '50%',
+                    transform: 'translateX(-50%)',
+                    opacity: 0,
+                    transition: 'opacity 0.2s',
+                    pointerEvents: 'none',
+                    zIndex: 1000,
+                  }}
+                >
+                  <Card
+                    size="small"
+                    style={{
+                      minWidth: 192,
+                      boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+                    }}
+                  >
+                    <div style={{ fontSize: 14, fontWeight: 500, marginBottom: 4 }}>{project.name}</div>
+                    <div style={{ fontSize: 12, color: '#8c8c8c', marginBottom: 8 }}>{project.location}</div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, marginBottom: 4 }}>
+                      <span style={{ color: '#8c8c8c' }}>完整度:</span>
+                      <span style={{ fontWeight: 500, color: getCompletenessColor(project.completeness) }}>
+                        {project.completeness}%
+                      </span>
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12 }}>
+                      <span style={{ color: '#8c8c8c' }}>状态:</span>
+                      <span style={{ fontWeight: 500 }}>{project.status}</span>
+                    </div>
+                  </Card>
                 </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
 
           {/* 地图图例 */}
-          <div className="absolute bottom-4 left-4 bg-white rounded-lg shadow-md p-3">
-            <div className="text-xs font-medium text-gray-700 mb-2">图例说明</div>
-            <div className="space-y-1 text-xs">
-              <div className="flex items-center space-x-2">
-                <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
+          <div style={{ position: 'absolute', bottom: 16, left: 16, background: '#fff', borderRadius: 8, padding: 12, boxShadow: '0 2px 8px rgba(0,0,0,0.15)' }}>
+            <div style={{ fontSize: 12, fontWeight: 500, color: '#262626', marginBottom: 8 }}>图例说明</div>
+            <Space direction="vertical" size="small" style={{ fontSize: 12 }}>
+              <Space size="small">
+                <span style={{ display: 'inline-block', width: 12, height: 12, background: '#1890ff', borderRadius: '50%' }} />
                 <span>已竣工项目</span>
-              </div>
-              <div className="flex items-center space-x-2">
-                <div className="w-3 h-3 bg-green-500 rounded-full"></div>
+              </Space>
+              <Space size="small">
+                <span style={{ display: 'inline-block', width: 12, height: 12, background: '#52c41a', borderRadius: '50%' }} />
                 <span>在建中项目</span>
-              </div>
-              <div className="flex items-center space-x-2">
-                <div className="w-3 h-3 bg-gray-400 rounded-full"></div>
+              </Space>
+              <Space size="small">
+                <span style={{ display: 'inline-block', width: 12, height: 12, background: '#d9d9d9', borderRadius: '50%' }} />
                 <span>已暂停项目</span>
-              </div>
-            </div>
+              </Space>
+            </Space>
           </div>
         </div>
       </div>
-    </div>
+    </Card>
   );
 }
-

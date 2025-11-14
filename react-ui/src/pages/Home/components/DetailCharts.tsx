@@ -1,3 +1,11 @@
+import { Card, Row, Col, Progress, List, Tag, Space, Empty } from 'antd';
+import {
+  PieChartOutlined,
+  BarChartOutlined,
+  LineChartOutlined,
+  WarningOutlined,
+  CheckCircleOutlined,
+} from '@ant-design/icons';
 
 interface ArchiveData {
   archiveTypes: { name: string; count: number; color: string }[];
@@ -26,192 +34,277 @@ export default function DetailCharts({ data, projects }: DetailChartsProps) {
   const maxTrendCount = Math.max(...data.monthlyTrend.map(m => m.count));
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-4 gap-6">
+    <Row gutter={[24, 24]}>
       {/* 档案类型分布 - 饼图 */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-        <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
-          <i className="ri-pie-chart-line mr-2 text-blue-600"></i>
-          档案类型分布
-        </h3>
-        
-        <div className="relative w-48 h-48 mx-auto mb-4">
-          <svg className="w-full h-full transform -rotate-90" viewBox="0 0 200 200">
-            {data.archiveTypes.map((type, index) => {
-              const total = data.archiveTypes.reduce((sum, t) => sum + t.count, 0);
-              const percentage = (type.count / total) * 100;
-              const angle = (percentage / 100) * 360;
-              const startAngle = data.archiveTypes.slice(0, index).reduce((sum, t) => 
-                sum + ((t.count / total) * 360), 0
-              );
-              
-              const startAngleRad = (startAngle * Math.PI) / 180;
-              const endAngleRad = ((startAngle + angle) * Math.PI) / 180;
-              
-              const largeArcFlag = angle > 180 ? 1 : 0;
-              const x1 = 100 + 80 * Math.cos(startAngleRad);
-              const y1 = 100 + 80 * Math.sin(startAngleRad);
-              const x2 = 100 + 80 * Math.cos(endAngleRad);
-              const y2 = 100 + 80 * Math.sin(endAngleRad);
-              
-              const pathData = [
-                `M 100 100`,
-                `L ${x1} ${y1}`,
-                `A 80 80 0 ${largeArcFlag} 1 ${x2} ${y2}`,
-                'Z'
-              ].join(' ');
-              
-              return (
-                <path
-                  key={index}
-                  d={pathData}
-                  fill={type.color}
-                  className="hover:opacity-80 transition-opacity cursor-pointer"
-                />
-              );
-            })}
-          </svg>
-        </div>
-        
-        <div className="space-y-2">
-          {data.archiveTypes.map((type, index) => (
-            <div key={index} className="flex items-center justify-between text-sm">
-              <div className="flex items-center space-x-2">
-                <div 
-                  className="w-3 h-3 rounded-full" 
-                  style={{ backgroundColor: type.color }}
-                ></div>
-                <span className="text-gray-700">{type.name}</span>
-              </div>
-              <span className="font-medium text-gray-900">{type.count}</span>
+      <Col xs={24} sm={12} lg={6}>
+        <Card
+          title={
+            <Space>
+              <PieChartOutlined style={{ color: '#1890ff' }} />
+              <span>档案类型分布</span>
+            </Space>
+          }
+        >
+          <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 16 }}>
+            <div style={{ position: 'relative', width: 192, height: 192 }}>
+              <svg
+                style={{ width: '100%', height: '100%', transform: 'rotate(-90deg)' }}
+                viewBox="0 0 200 200"
+              >
+                {data.archiveTypes.map((type, index) => {
+                  const total = data.archiveTypes.reduce((sum, t) => sum + t.count, 0);
+                  const percentage = (type.count / total) * 100;
+                  const angle = (percentage / 100) * 360;
+                  const startAngle = data.archiveTypes.slice(0, index).reduce(
+                    (sum, t) => sum + ((t.count / total) * 360),
+                    0
+                  );
+
+                  const startAngleRad = (startAngle * Math.PI) / 180;
+                  const endAngleRad = ((startAngle + angle) * Math.PI) / 180;
+
+                  const largeArcFlag = angle > 180 ? 1 : 0;
+                  const x1 = 100 + 80 * Math.cos(startAngleRad);
+                  const y1 = 100 + 80 * Math.sin(startAngleRad);
+                  const x2 = 100 + 80 * Math.cos(endAngleRad);
+                  const y2 = 100 + 80 * Math.sin(endAngleRad);
+
+                  const pathData = [
+                    `M 100 100`,
+                    `L ${x1} ${y1}`,
+                    `A 80 80 0 ${largeArcFlag} 1 ${x2} ${y2}`,
+                    'Z',
+                  ].join(' ');
+
+                  return (
+                    <path
+                      key={index}
+                      d={pathData}
+                      fill={type.color}
+                      style={{ transition: 'opacity 0.2s', cursor: 'pointer' }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.opacity = '0.8';
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.opacity = '1';
+                      }}
+                    />
+                  );
+                })}
+              </svg>
             </div>
-          ))}
-        </div>
-      </div>
+          </div>
+
+          <Space direction="vertical" size="small" style={{ width: '100%' }}>
+            {data.archiveTypes.map((type, index) => (
+              <div
+                key={index}
+                style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  fontSize: 14,
+                }}
+              >
+                <Space size="small">
+                  <span
+                    style={{
+                      display: 'inline-block',
+                      width: 12,
+                      height: 12,
+                      borderRadius: '50%',
+                      background: type.color,
+                    }}
+                  />
+                  <span>{type.name}</span>
+                </Space>
+                <span style={{ fontWeight: 500 }}>{type.count}</span>
+              </div>
+            ))}
+          </Space>
+        </Card>
+      </Col>
 
       {/* 按阶段归档数量 - 柱状图 */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-        <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
-          <i className="ri-bar-chart-line mr-2 text-green-600"></i>
-          按阶段归档数量
-        </h3>
-        
-        <div className="space-y-4">
-          {data.phaseArchives.map((phase, index) => (
-            <div key={index} className="space-y-2">
-              <div className="flex items-center justify-between text-sm">
-                <span className="text-gray-700 font-medium">{phase.phase}</span>
-                <span className="text-gray-900 font-semibold">{phase.count}</span>
-              </div>
-              <div className="w-full bg-gray-200 rounded-full h-3">
+      <Col xs={24} sm={12} lg={6}>
+        <Card
+          title={
+            <Space>
+              <BarChartOutlined style={{ color: '#52c41a' }} />
+              <span>按阶段归档数量</span>
+            </Space>
+          }
+        >
+          <Space direction="vertical" size="middle" style={{ width: '100%' }}>
+            {data.phaseArchives.map((phase, index) => (
+              <div key={index}>
                 <div
-                  className="bg-green-500 h-3 rounded-full transition-all duration-500"
-                  style={{ width: `${(phase.count / maxPhaseCount) * 100}%` }}
-                ></div>
+                  style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    marginBottom: 8,
+                    fontSize: 14,
+                  }}
+                >
+                  <span style={{ fontWeight: 500, color: '#262626' }}>{phase.phase}</span>
+                  <span style={{ fontWeight: 600, color: '#262626' }}>{phase.count}</span>
+                </div>
+                <Progress
+                  percent={(phase.count / maxPhaseCount) * 100}
+                  strokeColor="#52c41a"
+                  showInfo={false}
+                  size="small"
+                />
               </div>
-            </div>
-          ))}
-        </div>
-      </div>
+            ))}
+          </Space>
+        </Card>
+      </Col>
 
       {/* 近半年档案新增趋势 - 折线图 */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-        <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
-          <i className="ri-line-chart-line mr-2 text-purple-600"></i>
-          近半年新增趋势
-        </h3>
-        
-        <div className="relative h-40">
-          <svg className="w-full h-full" viewBox="0 0 300 120">
-            {/* 网格线 */}
-            {[0, 1, 2, 3, 4].map(i => (
-              <line
-                key={i}
-                x1="0"
-                y1={i * 24}
-                x2="300"
-                y2={i * 24}
-                stroke="#f3f4f6"
-                strokeWidth="1"
+      <Col xs={24} sm={12} lg={6}>
+        <Card
+          title={
+            <Space>
+              <LineChartOutlined style={{ color: '#722ed1' }} />
+              <span>近半年新增趋势</span>
+            </Space>
+          }
+        >
+          <div style={{ position: 'relative', height: 160, marginBottom: 8 }}>
+            <svg style={{ width: '100%', height: '100%' }} viewBox="0 0 300 120">
+              {/* 网格线 */}
+              {[0, 1, 2, 3, 4].map((i) => (
+                <line
+                  key={i}
+                  x1="0"
+                  y1={i * 24}
+                  x2="300"
+                  y2={i * 24}
+                  stroke="#f0f0f0"
+                  strokeWidth="1"
+                />
+              ))}
+
+              {/* 折线 */}
+              <polyline
+                fill="none"
+                stroke="#722ed1"
+                strokeWidth="3"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                points={data.monthlyTrend
+                  .map(
+                    (item, index) =>
+                      `${(index * 50) + 25},${120 - (item.count / maxTrendCount) * 100}`
+                  )
+                  .join(' ')}
               />
-            ))}
-            
-            {/* 折线 */}
-            <polyline
-              fill="none"
-              stroke="#8b5cf6"
-              strokeWidth="3"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              points={data.monthlyTrend.map((item, index) => 
-                `${(index * 50) + 25},${120 - (item.count / maxTrendCount) * 100}`
-              ).join(' ')}
-            />
-            
-            {/* 数据点 */}
+
+              {/* 数据点 */}
+              {data.monthlyTrend.map((item, index) => (
+                <circle
+                  key={index}
+                  cx={(index * 50) + 25}
+                  cy={120 - (item.count / maxTrendCount) * 100}
+                  r="4"
+                  fill="#722ed1"
+                  style={{ transition: 'r 0.2s', cursor: 'pointer' }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.setAttribute('r', '6');
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.setAttribute('r', '4');
+                  }}
+                />
+              ))}
+            </svg>
+          </div>
+
+          <div
+            style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              fontSize: 12,
+              color: '#8c8c8c',
+            }}
+          >
             {data.monthlyTrend.map((item, index) => (
-              <circle
-                key={index}
-                cx={(index * 50) + 25}
-                cy={120 - (item.count / maxTrendCount) * 100}
-                r="4"
-                fill="#8b5cf6"
-                className="hover:r-6 transition-all cursor-pointer"
-              />
+              <span key={index}>{item.month}</span>
             ))}
-          </svg>
-        </div>
-        
-        <div className="flex justify-between text-xs text-gray-500 mt-2">
-          {data.monthlyTrend.map((item, index) => (
-            <span key={index}>{item.month}</span>
-          ))}
-        </div>
-      </div>
+          </div>
+        </Card>
+      </Col>
 
       {/* 高风险项目清单 */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-        <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
-          <i className="ri-alert-line mr-2 text-red-600"></i>
-          高风险项目清单
-        </h3>
-        
-        {highRiskProjects.length > 0 ? (
-          <div className="space-y-3">
-            {highRiskProjects.slice(0, 5).map((project, index) => (
-              <div key={index} className="flex items-center justify-between p-3 bg-red-50 rounded-lg border border-red-100">
-                <div className="flex-1">
-                  <div className="text-sm font-medium text-gray-900 truncate">
-                    {project.name}
+      <Col xs={24} sm={12} lg={6}>
+        <Card
+          title={
+            <Space>
+              <WarningOutlined style={{ color: '#ff4d4f' }} />
+              <span>高风险项目清单</span>
+            </Space>
+          }
+        >
+          {highRiskProjects.length > 0 ? (
+            <List
+              dataSource={highRiskProjects.slice(0, 5)}
+              renderItem={(project, index) => (
+                <List.Item
+                  style={{
+                    background: '#fff1f0',
+                    border: '1px solid #ffccc7',
+                    borderRadius: 8,
+                    marginBottom: 12,
+                    padding: 12,
+                  }}
+                >
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div
+                      style={{
+                        fontSize: 14,
+                        fontWeight: 500,
+                        color: '#262626',
+                        marginBottom: 4,
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        whiteSpace: 'nowrap',
+                      }}
+                    >
+                      {project.name}
+                    </div>
+                    <div style={{ fontSize: 12, color: '#8c8c8c' }}>状态: {project.status}</div>
                   </div>
-                  <div className="text-xs text-gray-500 mt-1">
-                    状态: {project.status}
+                  <div style={{ textAlign: 'right', marginLeft: 12 }}>
+                    <div
+                      style={{
+                        fontSize: 18,
+                        fontWeight: 'bold',
+                        color: '#ff4d4f',
+                      }}
+                    >
+                      {project.completeness}%
+                    </div>
+                    <div style={{ fontSize: 12, color: '#ff4d4f' }}>完整度</div>
                   </div>
-                </div>
-                <div className="text-right">
-                  <div className="text-lg font-bold text-red-600">
-                    {project.completeness}%
-                  </div>
-                  <div className="text-xs text-red-500">
-                    完整度
-                  </div>
-                </div>
-              </div>
-            ))}
-            
-            {highRiskProjects.length > 5 && (
-              <button className="w-full text-center text-sm text-blue-600 hover:text-blue-700 py-2">
-                查看全部 {highRiskProjects.length} 个高风险项目
-              </button>
-            )}
-          </div>
-        ) : (
-          <div className="text-center py-8">
-            <i className="ri-checkbox-circle-line text-4xl text-green-500 mb-2"></i>
-            <p className="text-sm text-gray-500">暂无高风险项目</p>
-          </div>
-        )}
-      </div>
-    </div>
+                </List.Item>
+              )}
+            />
+          ) : (
+            <Empty
+              image={<CheckCircleOutlined style={{ fontSize: 48, color: '#52c41a' }} />}
+              description={<span style={{ fontSize: 14, color: '#8c8c8c' }}>暂无高风险项目</span>}
+              style={{ padding: '32px 0' }}
+            />
+          )}
+          {highRiskProjects.length > 5 && (
+            <Button type="link" block style={{ marginTop: 8 }}>
+              查看全部 {highRiskProjects.length} 个高风险项目
+            </Button>
+          )}
+        </Card>
+      </Col>
+    </Row>
   );
 }
-
