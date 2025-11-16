@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { PageContainer } from '@ant-design/pro-components';
 import { Card, Tabs, Space, Tag } from 'antd';
-import { BuildOutlined, FileListOutlined } from '@ant-design/icons';
+import { BuildOutlined, FileOutlined } from '@ant-design/icons';
 import ProjectList from './components/ProjectList';
 import ProjectForm from './components/ProjectForm';
 import StageTemplateManager from './components/StageTemplateManager';
@@ -41,7 +41,7 @@ export default function Project() {
       key: 'templates',
       label: (
         <Space>
-          <FileListOutlined />
+          <FileOutlined />
           项目阶段配置
         </Space>
       ),
