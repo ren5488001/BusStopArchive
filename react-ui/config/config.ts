@@ -92,13 +92,15 @@ export default defineConfig({
   },
   /**
    * @name 国际化插件
+   * @description 本项目只使用简体中文，保留国际化框架用于管理菜单文本等配置
    * @doc https://umijs.org/docs/max/i18n
    */
   locale: {
-    // default zh-CN
+    // 默认语言：简体中文（已删除其他语言文件）
     default: 'zh-CN',
+    // 启用 antd 国际化
     antd: true,
-    // default true, when it is true, will use `navigator.language` overwrite default
+    // 禁用浏览器语言检测，始终使用简体中文
     baseNavigator: false,
   },
   /**

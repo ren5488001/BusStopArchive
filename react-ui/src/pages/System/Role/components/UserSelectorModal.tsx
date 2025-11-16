@@ -93,7 +93,7 @@ const UserSelectorModal: React.FC<DataScopeFormProps> = (props) => {
         defaultMessage: '选择用户',
       })}
       open={props.open}
-      destroyOnClose
+      destroyOnHidden
       onOk={handleOk}
       onCancel={handleCancel}
     >

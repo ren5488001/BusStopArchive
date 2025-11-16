@@ -44,7 +44,7 @@ const JobLogDetailForm: React.FC<JobLogFormProps> = (props) => {
       })}
       open={props.open}
       forceRender
-      destroyOnClose
+      destroyOnHidden
       onOk={handleOk}
       onCancel={handleCancel}
     >

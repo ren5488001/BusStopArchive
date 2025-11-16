@@ -61,7 +61,7 @@ const ConfigForm: React.FC<ConfigFormProps> = (props) => {
       })}
       open={props.open}
       forceRender
-      destroyOnClose
+      destroyOnHidden
       onOk={handleOk}
       onCancel={handleCancel}
     >

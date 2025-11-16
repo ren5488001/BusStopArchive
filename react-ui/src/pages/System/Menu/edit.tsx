@@ -94,7 +94,7 @@ const MenuForm: React.FC<MenuFormProps> = (props) => {
       })}
       open={props.open}
       forceRender
-      destroyOnClose
+      destroyOnHidden
       onOk={handleOk}
       onCancel={handleCancel}
     >

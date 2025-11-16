@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
-import { Modal, Form, Input, Select, DatePicker, InputNumber, Button, Card, Divider, Tag, Space, Alert } from 'antd';
+import { Modal, Form, Input, Select, InputNumber, Button, Card, Tag, Space } from 'antd';
 import { InfoCircleOutlined, EnvironmentOutlined, FileTextOutlined } from '@ant-design/icons';
-import dayjs from 'dayjs';
 
 const { TextArea } = Input;
 const { Option } = Select;
@@ -13,8 +12,6 @@ interface Project {
   template: string;
   status: string;
   manager: string;
-  startDate: string;
-  endDate: string;
   latitude: number;
   longitude: number;
   description: string;
@@ -47,8 +44,6 @@ export default function ProjectForm({ project, templates, onClose }: ProjectForm
     if (project) {
       form.setFieldsValue({
         ...project,
-        startDate: project.startDate ? dayjs(project.startDate) : undefined,
-        endDate: project.endDate ? dayjs(project.endDate) : undefined,
       });
       const template = templates.find(t => t.name === project.template);
       setSelectedTemplate(template || null);
@@ -69,10 +64,8 @@ export default function ProjectForm({ project, templates, onClose }: ProjectForm
       const values = await form.validateFields();
       const formData = {
         ...values,
-        startDate: values.startDate ? values.startDate.format('YYYY-MM-DD') : '',
-        endDate: values.endDate ? values.endDate.format('YYYY-MM-DD') : '',
       };
-      
+
       if (!project) {
         // 新增项目时，系统自动生成项目编号
         const newProjectCode = `PRJ${Date.now().toString().slice(-8)}`;
@@ -80,7 +73,7 @@ export default function ProjectForm({ project, templates, onClose }: ProjectForm
       } else {
         console.log('更新项目数据:', formData);
       }
-      
+
       onClose();
     } catch (error) {
       console.error('表单验证失败:', error);
@@ -143,7 +136,7 @@ export default function ProjectForm({ project, templates, onClose }: ProjectForm
               rules={[{ required: true, message: '请选择负责人' }]}
               style={{ flex: 1 }}
             >
-              <Select placeholder="请选择负责人">
+              <Select placeholder="请选择项目负责人">
                 <Option value="张三">张三</Option>
                 <Option value="李四">李四</Option>
                 <Option value="王五">王五</Option>
@@ -156,7 +149,7 @@ export default function ProjectForm({ project, templates, onClose }: ProjectForm
               label="项目状态"
               style={{ flex: 1 }}
             >
-              <Select>
+              <Select placeholder="请选择项目状态">
                 <Option value="计划中">计划中</Option>
                 <Option value="在建中">在建中</Option>
                 <Option value="已竣工">已竣工</Option>
@@ -165,93 +158,6 @@ export default function ProjectForm({ project, templates, onClose }: ProjectForm
             </Form.Item>
           </Space.Compact>
 
-          <Space.Compact style={{ width: '100%', gap: 16 }}>
-            <Form.Item
-              name="startDate"
-              label="计划开始日期"
-              style={{ flex: 1 }}
-            >
-              <DatePicker style={{ width: '100%' }} />
-            </Form.Item>
-
-            <Form.Item
-              name="endDate"
-              label="计划结束日期"
-              style={{ flex: 1 }}
-            >
-              <DatePicker style={{ width: '100%' }} />
-            </Form.Item>
-          </Space.Compact>
-
-          {!project && (
-            <Alert
-              message="项目编号将在创建成功后由系统自动生成"
-              type="info"
-              showIcon
-              style={{ marginTop: 16 }}
-            />
-          )}
-        </Card>
-
-        {/* GIS坐标信息 */}
-        <Card
-          title={
-            <Space>
-              <EnvironmentOutlined style={{ color: '#52c41a' }} />
-              GIS坐标信息
-            </Space>
-          }
-          style={{ marginBottom: 16 }}
-        >
-          <Space.Compact style={{ width: '100%', gap: 16 }}>
-            <Form.Item
-              name="latitude"
-              label="纬度"
-              style={{ flex: 1 }}
-            >
-              <InputNumber
-                style={{ width: '100%' }}
-                step={0.000001}
-                placeholder="请输入纬度"
-              />
-            </Form.Item>
-
-            <Form.Item
-              name="longitude"
-              label="经度"
-              style={{ flex: 1 }}
-            >
-              <InputNumber
-                style={{ width: '100%' }}
-                step={0.000001}
-                placeholder="请输入经度"
-              />
-            </Form.Item>
-          </Space.Compact>
-
-          <Button
-            type="default"
-            icon={<EnvironmentOutlined />}
-            onClick={() => {
-              // TODO: 实现地图选择功能
-              console.log('在地图上选择位置');
-            }}
-            style={{ marginTop: 16 }}
-          >
-            在地图上选择位置
-          </Button>
-        </Card>
-
-        {/* 阶段模板选择 */}
-        <Card
-          title={
-            <Space>
-              <FileTextOutlined style={{ color: '#722ed1' }} />
-              选择阶段模板
-            </Space>
-          }
-          style={{ marginBottom: 16 }}
-        >
           <Form.Item
             name="template"
             label="建设阶段模板"
@@ -303,23 +209,61 @@ export default function ProjectForm({ project, templates, onClose }: ProjectForm
               </Space>
             </Card>
           )}
-        </Card>
 
-        {/* 项目描述 */}
-        <Card
-          title={
-            <Space>
-              <FileTextOutlined style={{ color: '#fa8c16' }} />
-              项目描述
-            </Space>
-          }
-        >
           <Form.Item name="description" label="项目描述">
             <TextArea
               rows={4}
               placeholder="请输入项目描述..."
             />
           </Form.Item>
+        </Card>
+
+        {/* GIS坐标信息 */}
+        <Card
+          title={
+            <Space>
+              <EnvironmentOutlined style={{ color: '#52c41a' }} />
+              GIS坐标信息
+            </Space>
+          }
+        >
+          <Space.Compact style={{ width: '100%', gap: 16 }}>
+            <Form.Item
+              name="latitude"
+              label="纬度"
+              style={{ flex: 1 }}
+            >
+              <InputNumber
+                style={{ width: '100%' }}
+                step={0.000001}
+                placeholder="请输入纬度"
+              />
+            </Form.Item>
+
+            <Form.Item
+              name="longitude"
+              label="经度"
+              style={{ flex: 1 }}
+            >
+              <InputNumber
+                style={{ width: '100%' }}
+                step={0.000001}
+                placeholder="请输入经度"
+              />
+            </Form.Item>
+          </Space.Compact>
+
+          <Button
+            type="default"
+            icon={<EnvironmentOutlined />}
+            onClick={() => {
+              // TODO: 实现地图选择功能
+              console.log('在地图上选择位置');
+            }}
+            style={{ marginTop: 16 }}
+          >
+            在地图上选择位置
+          </Button>
         </Card>
       </Form>
     </Modal>

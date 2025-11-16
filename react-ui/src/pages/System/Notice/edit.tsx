@@ -63,7 +63,7 @@ const NoticeForm: React.FC<NoticeFormProps> = (props) => {
       })}
       forceRender
       open={props.open}
-      destroyOnClose
+      destroyOnHidden
       onOk={handleOk}
       onCancel={handleCancel}
     >

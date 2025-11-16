@@ -69,7 +69,7 @@ const RoleForm: React.FC<RoleFormProps> = (props) => {
       })}
       forceRender
       open={props.open}
-      destroyOnClose
+      destroyOnHidden
       onOk={handleOk}
       onCancel={handleCancel}
     >

@@ -95,4 +95,21 @@ export default [
       },
     ]
   },
+  {
+    name: 'archive',
+    path: '/archive',
+    icon: 'fileText',
+    routes: [
+      {
+        name: 'search',
+        path: '/archive/search',
+        component: './Archive/ArchiveSearch',
+      },
+      {
+        name: 'entry',
+        path: '/archive/entry',
+        component: './Archive/ArchiveEntry',
+      },
+    ]
+  },
 ];

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Card, Input, Select, Checkbox, Button, Table, Tag, Progress, Space, Tooltip } from 'antd';
+import { Card, Input, Select, Checkbox, Button, Table, Tag, Progress, Space, Tooltip, Row, Col } from 'antd';
 import { SearchOutlined, PlusOutlined, DownloadOutlined, EyeOutlined, EditOutlined, DeleteOutlined, UndoOutlined } from '@ant-design/icons';
 import type { ColumnsType } from 'antd/es/table';
 
@@ -196,49 +196,65 @@ export default function ProjectList({ projects, onNewProject, onEditProject }: P
   return (
     <Space direction="vertical" size="middle" style={{ display: 'flex', width: '100%' }}>
       {/* 筛选查询区 */}
-      <Card title="筛选查询">
-        <Space wrap size="large" style={{ width: '100%' }}>
-          <Input
-            placeholder="项目编号或名称"
-            prefix={<SearchOutlined />}
-            value={searchKeyword}
-            onChange={(e) => setSearchKeyword(e.target.value)}
-            style={{ width: 250 }}
-            allowClear
-          />
-          
-          <Select
-            placeholder="全部状态"
-            value={statusFilter}
-            onChange={setStatusFilter}
-            style={{ width: 150 }}
-            allowClear
-          >
-            <Select.Option value="在建中">在建中</Select.Option>
-            <Select.Option value="已竣工">已竣工</Select.Option>
-            <Select.Option value="暂停">暂停</Select.Option>
-            <Select.Option value="计划中">计划中</Select.Option>
-          </Select>
-          
-          <Select
-            placeholder="全部负责人"
-            value={managerFilter}
-            onChange={setManagerFilter}
-            style={{ width: 150 }}
-            allowClear
-          >
-            {uniqueManagers.map(manager => (
-              <Select.Option key={manager} value={manager}>{manager}</Select.Option>
-            ))}
-          </Select>
-          
-          <Checkbox
-            checked={showDeleted}
-            onChange={(e) => setShowDeleted(e.target.checked)}
-          >
-            显示已删除
-          </Checkbox>
-        </Space>
+      <Card>
+        <Row gutter={[16, 16]}>
+          <Col span={8}>
+            <Space direction="vertical" size={4} style={{ width: '100%' }}>
+              <span style={{ fontSize: '14px' }}>项目编号/名称</span>
+              <Input
+                placeholder="请输入项目编号或名称"
+                prefix={<SearchOutlined />}
+                value={searchKeyword}
+                onChange={(e) => setSearchKeyword(e.target.value)}
+                allowClear
+              />
+            </Space>
+          </Col>
+
+          <Col span={8}>
+            <Space direction="vertical" size={4} style={{ width: '100%' }}>
+              <span style={{ fontSize: '14px' }}>项目状态</span>
+              <Select
+                placeholder="请选择项目状态"
+                value={statusFilter}
+                onChange={setStatusFilter}
+                style={{ width: '100%' }}
+                allowClear
+              >
+                <Select.Option value="在建中">在建中</Select.Option>
+                <Select.Option value="已竣工">已竣工</Select.Option>
+                <Select.Option value="暂停">暂停</Select.Option>
+                <Select.Option value="计划中">计划中</Select.Option>
+              </Select>
+            </Space>
+          </Col>
+
+          <Col span={8}>
+            <Space direction="vertical" size={4} style={{ width: '100%' }}>
+              <span style={{ fontSize: '14px' }}>负责人</span>
+              <Select
+                placeholder="请选择负责人"
+                value={managerFilter}
+                onChange={setManagerFilter}
+                style={{ width: '100%' }}
+                allowClear
+              >
+                {uniqueManagers.map(manager => (
+                  <Select.Option key={manager} value={manager}>{manager}</Select.Option>
+                ))}
+              </Select>
+            </Space>
+          </Col>
+
+          <Col span={24}>
+            <Checkbox
+              checked={showDeleted}
+              onChange={(e) => setShowDeleted(e.target.checked)}
+            >
+              显示已删除
+            </Checkbox>
+          </Col>
+        </Row>
       </Card>
 
       {/* 操作栏 */}

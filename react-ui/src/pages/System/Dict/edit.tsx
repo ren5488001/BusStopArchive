@@ -60,7 +60,7 @@ const DictTypeForm: React.FC<DictTypeFormProps> = (props) => {
       })}
       open={props.open}
       forceRender
-      destroyOnClose
+      destroyOnHidden
       onOk={handleOk}
       onCancel={handleCancel}
     >

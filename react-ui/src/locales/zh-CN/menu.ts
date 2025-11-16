@@ -50,4 +50,7 @@ export default {
   'menu.editor.flow': '流程编辑器',
   'menu.editor.mind': '脑图编辑器',
   'menu.editor.koni': '拓扑编辑器',
+  'menu.archive': '档案管理',
+  'menu.archive.search': '档案检索查询',
+  'menu.archive.entry': '著录与入库',
 };

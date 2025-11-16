@@ -95,7 +95,7 @@ const AvatarCropperForm: React.FC<AvatarCropperProps> = (props) => {
         defaultMessage: '修改头像',
       })}
       open={props.open}
-      destroyOnClose
+      destroyOnHidden
       onOk={handleOk}
       onCancel={handleCancel}
     >
