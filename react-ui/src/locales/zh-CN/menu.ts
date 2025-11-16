@@ -51,4 +51,5 @@ export default {
   'menu.editor.mind': '脑图编辑器',
   'menu.editor.koni': '拓扑编辑器',
   'menu.project': '项目管理',
+  'menu.project.list': '项目列表',
 };

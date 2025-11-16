@@ -49,4 +49,6 @@ export default {
   'menu.editor.flow': '流程編輯器',
   'menu.editor.mind': '腦圖編輯器',
   'menu.editor.koni': '拓撲編輯器',
+  'menu.project': '項目管理',
+  'menu.project.list': '項目列表',
 };
