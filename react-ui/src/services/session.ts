@@ -104,9 +104,9 @@ export function convertCompatRouters(childrens: API.RoutersMenuItem[]): any[] {
   return childrens.map((item: API.RoutersMenuItem) => {
     return {
       path: item.path,
-      icon: createIcon(item.meta.icon),
+      icon: item.meta ? createIcon(item.meta.icon) : '',
       //  icon: item.meta.icon,
-      name: item.meta.title,
+      name: item.meta ? item.meta.title : item.name,
       routes: item.children ? convertCompatRouters(item.children) : undefined,
       hideChildrenInMenu: item.hidden,
       hideInMenu: item.hidden,
