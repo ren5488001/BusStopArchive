@@ -95,18 +95,4 @@ export default [
       },
     ]
   },
-  {
-    name: 'project',
-    path: '/project',
-    icon: 'project',
-    redirect: '/project/list',
-    routes: [
-      {
-        name: 'project.list',
-        path: '/project/list',
-        component: './Project',
-        icon: 'UnorderedListOutlined',
-      },
-    ],
-  },
 ];
