@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Card, Button, Table, Space, Modal, Form, Input, Checkbox, Tooltip, message } from 'antd';
+import { Card, Button, Table, Space, Modal, Form, Input, Checkbox, Tooltip, message, Select } from 'antd';
 import { PlusOutlined, EditOutlined, CopyOutlined, DeleteOutlined, ArrowUpOutlined, ArrowDownOutlined, FileTextOutlined } from '@ant-design/icons';
 import type { ColumnsType } from 'antd/es/table';
 import { getDictSelectOption } from '@/services/system/dict';
@@ -198,29 +198,35 @@ function TemplateConfigForm({ template, onClose }: { template: StageTemplate | n
   ]);
 
   const [standardFiles, setStandardFiles] = useState<Array<{ label: string; value: string }>>([]);
+  const [projectPhases, setProjectPhases] = useState<Array<{ label: string; value: string }>>([]);
   const [loading, setLoading] = useState(false);
 
-  // 从数据字典加载标准文件配置
+  // 从数据字典加载配置数据
   useEffect(() => {
-    const fetchStandardFiles = async () => {
+    const fetchDictData = async () => {
       setLoading(true);
       try {
-        const options = await getDictSelectOption('bams_file_conf');
-        setStandardFiles(options);
+        // 并行加载标准文件配置和项目阶段数据
+        const [fileOptions, phaseOptions] = await Promise.all([
+          getDictSelectOption('bams_file_conf'),
+          getDictSelectOption('bams_project_phase')
+        ]);
+        setStandardFiles(fileOptions);
+        setProjectPhases(phaseOptions);
       } catch (error) {
-        console.error('加载标准文件配置失败:', error);
-        message.error('加载标准文件配置失败');
+        console.error('加载字典数据失败:', error);
+        message.error('加载字典数据失败');
       } finally {
         setLoading(false);
       }
     };
-    fetchStandardFiles();
+    fetchDictData();
   }, []);
 
   const addStage = () => {
     const newStage = {
       id: Date.now().toString(),
-      name: `新阶段${stages.length + 1}`,
+      name: '', // 默认为空，需要用户从下拉框选择
       order: stages.length + 1,
       requiredFiles: []
     };
@@ -345,11 +351,17 @@ function TemplateConfigForm({ template, onClose }: { template: StageTemplate | n
                     }}>
                       阶段 {stage.order}
                     </span>
-                    <Input
+                    <Select
                       value={stage.name}
-                      onChange={(e) => updateStage(stage.id, 'name', e.target.value)}
-                      placeholder="阶段名称"
+                      onChange={(value) => updateStage(stage.id, 'name', value)}
+                      placeholder="请选择阶段名称"
                       style={{ width: 200 }}
+                      options={projectPhases}
+                      loading={loading}
+                      showSearch
+                      filterOption={(input, option) =>
+                        (option?.label ?? '').toLowerCase().includes(input.toLowerCase())
+                      }
                     />
                     <Space>
                       <Tooltip title="上移">
