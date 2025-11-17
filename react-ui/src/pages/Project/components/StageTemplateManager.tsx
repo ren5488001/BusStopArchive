@@ -331,7 +331,7 @@ function TemplateConfigForm({ template, onClose }: { template: StageTemplate | n
             label="模板名称"
             rules={[{ required: true, message: '请输入模板名称' }]}
           >
-            <Input placeholder="请输入模板名称" />
+            <Input placeholder="请输入模板名称" autoComplete="off" />
           </Form.Item>
 
           <Form.Item
