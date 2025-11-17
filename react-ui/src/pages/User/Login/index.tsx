@@ -119,8 +119,10 @@ const Login: React.FC = () => {
         message.success(defaultLoginSuccessMessage);
         await fetchUserInfo();
         console.log('login ok');
+        // 使用 window.location.href 跳转，确保菜单正确加载
         const urlParams = new URL(window.location.href).searchParams;
-        history.push(urlParams.get('redirect') || '/');
+        const redirect = urlParams.get('redirect') || '/';
+        window.location.href = redirect;
         return;
       } else {
         console.log(response.msg);
@@ -291,12 +293,14 @@ const Login: React.FC = () => {
                   <Image
                     src={captchaCode}
                     alt="验证码"
+                    title="点击刷新验证码"
                     style={{
                       display: 'inline-block',
                       verticalAlign: 'top',
                       cursor: 'pointer',
                       paddingLeft: '10px',
-                      width: '100px',
+                      width: '120px',
+                      height: '40px',
                     }}
                     preview={false}
                     onClick={() => getCaptchaCode()}

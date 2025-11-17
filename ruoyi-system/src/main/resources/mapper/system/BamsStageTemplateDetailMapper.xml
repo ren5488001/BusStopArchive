@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.system.mapper.BamsStageTemplateDetailMapper">
+
+    <resultMap type="BamsStageTemplateDetail" id="BamsStageTemplateDetailResult">
+        <result property="detailId"        column="detail_id"        />
+        <result property="templateId"      column="template_id"      />
+        <result property="stageName"       column="stage_name"       />
+        <result property="stageOrder"      column="stage_order"      />
+        <result property="requiredFiles"   column="required_files"   />
+        <result property="createTime"      column="create_time"      />
+        <result property="updateTime"      column="update_time"      />
+    </resultMap>
+
+    <sql id="selectDetailVo">
+        select detail_id, template_id, stage_name, stage_order, required_files, create_time, update_time
+        from bams_stage_template_detail
+    </sql>
+
+    <select id="selectDetailListByTemplateId" parameterType="Long" resultMap="BamsStageTemplateDetailResult">
+        <include refid="selectDetailVo"/>
+        where template_id = #{templateId}
+        order by stage_order asc
+    </select>
+
+    <insert id="batchInsertDetail">
+        insert into bams_stage_template_detail (
+            template_id, stage_name, stage_order, required_files, create_time
+        ) values
+        <foreach item="item" collection="list" separator=",">
+            (
+                #{item.templateId},
+                #{item.stageName},
+                #{item.stageOrder},
+                #{item.requiredFiles},
+                sysdate()
+            )
+        </foreach>
+    </insert>
+
+    <delete id="deleteDetailByTemplateId" parameterType="Long">
+        delete from bams_stage_template_detail where template_id = #{templateId}
+    </delete>
+
+    <delete id="deleteDetailByTemplateIds" parameterType="Long">
+        delete from bams_stage_template_detail where template_id in
+        <foreach item="templateId" collection="array" open="(" separator="," close=")">
+            #{templateId}
+        </foreach>
+    </delete>
+
+</mapper>

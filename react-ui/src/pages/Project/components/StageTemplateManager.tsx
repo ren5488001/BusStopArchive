@@ -1,41 +1,126 @@
 import { useState, useEffect } from 'react';
 import { Card, Button, Table, Space, Modal, Form, Input, Checkbox, Tooltip, message, Select } from 'antd';
-import { PlusOutlined, EditOutlined, CopyOutlined, DeleteOutlined, ArrowUpOutlined, ArrowDownOutlined, FileTextOutlined } from '@ant-design/icons';
+import { PlusOutlined, EditOutlined, CopyOutlined, DeleteOutlined, ArrowUpOutlined, ArrowDownOutlined, FileTextOutlined, ExclamationCircleOutlined } from '@ant-design/icons';
 import type { ColumnsType } from 'antd/es/table';
 import { getDictSelectOption } from '@/services/system/dict';
+import {
+  getTemplateList,
+  getTemplateDetail,
+  addTemplate,
+  updateTemplate,
+  deleteTemplate,
+  copyTemplate,
+} from '@/services/bams/stageTemplate';
 
 const { TextArea } = Input;
+const { confirm } = Modal;
+
+interface StageDetail {
+  detailId?: number;
+  stageName: string;
+  stageOrder: number;
+  requiredFileList: string[];
+}
 
 interface StageTemplate {
-  id: string;
-  name: string;
+  templateId?: number;
+  templateName: string;
+  templateDesc?: string;
   stageCount: number;
-  creator: string;
-  createDate: string;
-  stages: Array<{
-    id: string;
-    name: string;
-    order: number;
-    requiredFiles: string[];
-  }>;
+  status?: string;
+  createBy?: string;
+  createTime?: string;
+  remark?: string;
+  stages?: StageDetail[];
 }
 
-interface StageTemplateManagerProps {
-  templates: StageTemplate[];
-}
-
-export default function StageTemplateManager({ templates }: StageTemplateManagerProps) {
+export default function StageTemplateManager() {
+  const [templates, setTemplates] = useState<StageTemplate[]>([]);
+  const [loading, setLoading] = useState(false);
   const [showTemplateForm, setShowTemplateForm] = useState(false);
   const [editingTemplate, setEditingTemplate] = useState<StageTemplate | null>(null);
+
+  // 加载模板列表
+  const loadTemplates = async () => {
+    setLoading(true);
+    try {
+      const response = await getTemplateList();
+      if (response.code === 200) {
+        setTemplates(response.rows || []);
+      } else {
+        message.error(response.msg || '加载模板列表失败');
+      }
+    } catch (error) {
+      console.error('加载模板列表失败:', error);
+      message.error('加载模板列表失败');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadTemplates();
+  }, []);
 
   const handleNewTemplate = () => {
     setEditingTemplate(null);
     setShowTemplateForm(true);
   };
 
-  const handleEditTemplate = (template: StageTemplate) => {
-    setEditingTemplate(template);
-    setShowTemplateForm(true);
+  const handleEditTemplate = async (template: StageTemplate) => {
+    if (!template.templateId) return;
+
+    try {
+      const response = await getTemplateDetail(template.templateId);
+      if (response.code === 200) {
+        setEditingTemplate(response.data);
+        setShowTemplateForm(true);
+      } else {
+        message.error(response.msg || '加载模板详情失败');
+      }
+    } catch (error) {
+      console.error('加载模板详情失败:', error);
+      message.error('加载模板详情失败');
+    }
+  };
+
+  const handleDeleteTemplate = (templateId: number) => {
+    confirm({
+      title: '确认删除',
+      icon: <ExclamationCircleOutlined />,
+      content: '确定要删除该模板吗？',
+      okText: '确认',
+      cancelText: '取消',
+      onOk: async () => {
+        try {
+          const response = await deleteTemplate(templateId.toString());
+          if (response.code === 200) {
+            message.success('删除成功');
+            loadTemplates();
+          } else {
+            message.error(response.msg || '删除失败');
+          }
+        } catch (error) {
+          console.error('删除失败:', error);
+          message.error('删除失败');
+        }
+      },
+    });
+  };
+
+  const handleCopyTemplate = async (templateId: number) => {
+    try {
+      const response = await copyTemplate(templateId);
+      if (response.code === 200) {
+        message.success('复制成功');
+        loadTemplates();
+      } else {
+        message.error(response.msg || '复制失败');
+      }
+    } catch (error) {
+      console.error('复制失败:', error);
+      message.error('复制失败');
+    }
   };
 
   const handleCloseForm = () => {
@@ -43,11 +128,16 @@ export default function StageTemplateManager({ templates }: StageTemplateManager
     setEditingTemplate(null);
   };
 
+  const handleSaveSuccess = () => {
+    loadTemplates();
+    handleCloseForm();
+  };
+
   const columns: ColumnsType<StageTemplate> = [
     {
       title: '模板名称',
-      dataIndex: 'name',
-      key: 'name',
+      dataIndex: 'templateName',
+      key: 'templateName',
       render: (name: string) => (
         <Space>
           <div style={{
@@ -87,15 +177,15 @@ export default function StageTemplateManager({ templates }: StageTemplateManager
     },
     {
       title: '创建人',
-      dataIndex: 'creator',
-      key: 'creator',
+      dataIndex: 'createBy',
+      key: 'createBy',
       width: 120,
     },
     {
       title: '创建时间',
-      dataIndex: 'createDate',
-      key: 'createDate',
-      width: 120,
+      dataIndex: 'createTime',
+      key: 'createTime',
+      width: 180,
     },
     {
       title: '操作',
@@ -116,10 +206,7 @@ export default function StageTemplateManager({ templates }: StageTemplateManager
             <Button
               type="link"
               icon={<CopyOutlined />}
-              onClick={() => {
-                // TODO: 实现复制功能
-                console.log('复制模板', record);
-              }}
+              onClick={() => record.templateId && handleCopyTemplate(record.templateId)}
             >
               复制
             </Button>
@@ -129,10 +216,7 @@ export default function StageTemplateManager({ templates }: StageTemplateManager
               type="link"
               danger
               icon={<DeleteOutlined />}
-              onClick={() => {
-                // TODO: 实现删除功能
-                console.log('删除模板', record);
-              }}
+              onClick={() => record.templateId && handleDeleteTemplate(record.templateId)}
             >
               删除
             </Button>
@@ -165,7 +249,8 @@ export default function StageTemplateManager({ templates }: StageTemplateManager
         <Table
           columns={columns}
           dataSource={templates}
-          rowKey="id"
+          rowKey="templateId"
+          loading={loading}
           pagination={{
             showSizeChanger: true,
             showQuickJumper: true,
@@ -179,6 +264,7 @@ export default function StageTemplateManager({ templates }: StageTemplateManager
         <TemplateConfigForm
           template={editingTemplate}
           onClose={handleCloseForm}
+          onSuccess={handleSaveSuccess}
         />
       )}
     </Space>
@@ -186,20 +272,34 @@ export default function StageTemplateManager({ templates }: StageTemplateManager
 }
 
 // 模板配置表单组件
-function TemplateConfigForm({ template, onClose }: { template: StageTemplate | null; onClose: () => void }) {
+function TemplateConfigForm({
+  template,
+  onClose,
+  onSuccess,
+}: {
+  template: StageTemplate | null;
+  onClose: () => void;
+  onSuccess: () => void;
+}) {
   const [form] = Form.useForm();
   const [stages, setStages] = useState<Array<{
     id: string;
     name: string;
     order: number;
     requiredFiles: string[];
-  }>>(template?.stages || [
-    { id: '1', name: '立项阶段', order: 1, requiredFiles: [] }
-  ]);
+  }>>(
+    template?.stages?.map((s) => ({
+      id: s.detailId?.toString() || Date.now().toString(),
+      name: s.stageName,
+      order: s.stageOrder,
+      requiredFiles: s.requiredFileList || [],
+    })) || [{ id: '1', name: '', order: 1, requiredFiles: [] }]
+  );
 
   const [standardFiles, setStandardFiles] = useState<Array<{ label: string; value: string }>>([]);
   const [projectPhases, setProjectPhases] = useState<Array<{ label: string; value: string }>>([]);
   const [loading, setLoading] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
 
   // 从数据字典加载配置数据
   useEffect(() => {
@@ -241,7 +341,7 @@ function TemplateConfigForm({ template, onClose }: { template: StageTemplate | n
   };
 
   const updateStage = (stageId: string, field: string, value: any) => {
-    setStages(stages.map(stage => 
+    setStages(stages.map(stage =>
       stage.id === stageId ? { ...stage, [field]: value } : stage
     ));
   };
@@ -256,12 +356,12 @@ function TemplateConfigForm({ template, onClose }: { template: StageTemplate | n
     const newStages = [...stages];
     const targetIndex = direction === 'up' ? currentIndex - 1 : currentIndex + 1;
     [newStages[currentIndex], newStages[targetIndex]] = [newStages[targetIndex], newStages[currentIndex]];
-    
+
     // 更新order
     newStages.forEach((stage, index) => {
       stage.order = index + 1;
     });
-    
+
     setStages(newStages);
   };
 
@@ -293,9 +393,43 @@ function TemplateConfigForm({ template, onClose }: { template: StageTemplate | n
         }
       }
 
-      console.log('保存模板:', { ...values, stages });
-      message.success('模板保存成功');
-      onClose();
+      // 构建提交数据
+      const submitData = {
+        templateId: template?.templateId,
+        templateName: values.name,
+        templateDesc: values.desc,
+        remark: values.desc,
+        stages: stages.map(stage => ({
+          stageName: stage.name,
+          stageOrder: stage.order,
+          requiredFileList: stage.requiredFiles
+        }))
+      };
+
+      setSubmitting(true);
+
+      try {
+        let response;
+        if (template?.templateId) {
+          // 修改
+          response = await updateTemplate(submitData);
+        } else {
+          // 新增
+          response = await addTemplate(submitData);
+        }
+
+        if (response.code === 200) {
+          message.success(template ? '模板修改成功' : '模板创建成功');
+          onSuccess();
+        } else {
+          message.error(response.msg || '操作失败');
+        }
+      } catch (error) {
+        console.error('保存失败:', error);
+        message.error('保存失败');
+      } finally {
+        setSubmitting(false);
+      }
     } catch (error) {
       console.error('表单验证失败:', error);
     }
@@ -311,7 +445,7 @@ function TemplateConfigForm({ template, onClose }: { template: StageTemplate | n
         <Button key="cancel" onClick={onClose}>
           取消
         </Button>,
-        <Button key="submit" type="primary" onClick={handleSubmit}>
+        <Button key="submit" type="primary" onClick={handleSubmit} loading={submitting}>
           保存模板
         </Button>,
       ]}
@@ -320,8 +454,8 @@ function TemplateConfigForm({ template, onClose }: { template: StageTemplate | n
         form={form}
         layout="vertical"
         initialValues={{
-          name: template?.name || '',
-          desc: '',
+          name: template?.templateName || '',
+          desc: template?.templateDesc || '',
         }}
       >
         {/* 基础信息 */}
@@ -463,4 +597,3 @@ function TemplateConfigForm({ template, onClose }: { template: StageTemplate | n
     </Modal>
   );
 }
-

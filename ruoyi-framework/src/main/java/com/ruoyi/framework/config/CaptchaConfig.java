@@ -50,32 +50,36 @@ public class CaptchaConfig
         Properties properties = new Properties();
         // 是否有边框 默认为true 我们可以自己设置yes，no
         properties.setProperty(KAPTCHA_BORDER, "yes");
-        // 边框颜色 默认为Color.BLACK
-        properties.setProperty(KAPTCHA_BORDER_COLOR, "105,179,90");
-        // 验证码文本字符颜色 默认为Color.BLACK
-        properties.setProperty(KAPTCHA_TEXTPRODUCER_FONT_COLOR, "blue");
-        // 验证码图片宽度 默认为200
-        properties.setProperty(KAPTCHA_IMAGE_WIDTH, "160");
+        // 边框颜色 默认为Color.BLACK - 使用深灰色边框，更清晰
+        properties.setProperty(KAPTCHA_BORDER_COLOR, "68,68,68");
+        // 验证码文本字符颜色 默认为Color.BLACK - 使用深蓝色，对比度更好
+        properties.setProperty(KAPTCHA_TEXTPRODUCER_FONT_COLOR, "31,73,125");
+        // 验证码图片宽度 默认为200 - 增加宽度，让算式显示更清晰
+        properties.setProperty(KAPTCHA_IMAGE_WIDTH, "180");
         // 验证码图片高度 默认为50
         properties.setProperty(KAPTCHA_IMAGE_HEIGHT, "60");
-        // 验证码文本字符大小 默认为40
-        properties.setProperty(KAPTCHA_TEXTPRODUCER_FONT_SIZE, "35");
+        // 验证码文本字符大小 默认为40 - 增大字体，更易辨认
+        properties.setProperty(KAPTCHA_TEXTPRODUCER_FONT_SIZE, "40");
         // KAPTCHA_SESSION_KEY
         properties.setProperty(KAPTCHA_SESSION_CONFIG_KEY, "kaptchaCodeMath");
         // 验证码文本生成器
         properties.setProperty(KAPTCHA_TEXTPRODUCER_IMPL, "com.ruoyi.framework.config.KaptchaTextCreator");
-        // 验证码文本字符间距 默认为2
-        properties.setProperty(KAPTCHA_TEXTPRODUCER_CHAR_SPACE, "3");
+        // 验证码文本字符间距 默认为2 - 增加间距，防止字符重叠
+        properties.setProperty(KAPTCHA_TEXTPRODUCER_CHAR_SPACE, "8");
         // 验证码文本字符长度 默认为5
         properties.setProperty(KAPTCHA_TEXTPRODUCER_CHAR_LENGTH, "6");
         // 验证码文本字体样式 默认为new Font("Arial", 1, fontSize), new Font("Courier", 1, fontSize)
-        properties.setProperty(KAPTCHA_TEXTPRODUCER_FONT_NAMES, "Arial,Courier");
-        // 验证码噪点颜色 默认为Color.BLACK
-        properties.setProperty(KAPTCHA_NOISE_COLOR, "white");
-        // 干扰实现类
+        // 使用 Arial 字体，数字更清晰
+        properties.setProperty(KAPTCHA_TEXTPRODUCER_FONT_NAMES, "Arial");
+        // 背景颜色 - 使用浅灰色背景
+        properties.setProperty(KAPTCHA_BACKGROUND_CLR_FROM, "245,245,245");
+        properties.setProperty(KAPTCHA_BACKGROUND_CLR_TO, "255,255,255");
+        // 验证码噪点颜色 默认为Color.BLACK - 使用浅灰色噪点，不干扰阅读
+        properties.setProperty(KAPTCHA_NOISE_COLOR, "200,200,200");
+        // 干扰实现类 - 无噪点，保持清晰
         properties.setProperty(KAPTCHA_NOISE_IMPL, "com.google.code.kaptcha.impl.NoNoise");
-        // 图片样式 水纹com.google.code.kaptcha.impl.WaterRipple 鱼眼com.google.code.kaptcha.impl.FishEyeGimpy 阴影com.google.code.kaptcha.impl.ShadowGimpy
-        properties.setProperty(KAPTCHA_OBSCURIFICATOR_IMPL, "com.google.code.kaptcha.impl.ShadowGimpy");
+        // 图片样式 - 使用无干扰的默认样式，去除阴影效果
+        properties.setProperty(KAPTCHA_OBSCURIFICATOR_IMPL, "com.google.code.kaptcha.impl.NoDistortion");
         Config config = new Config(properties);
         defaultKaptcha.setConfig(config);
         return defaultKaptcha;
