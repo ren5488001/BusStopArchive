@@ -1,7 +1,8 @@
-import { useState } from 'react';
-import { Card, Button, Table, Space, Modal, Form, Input, Checkbox, Tooltip } from 'antd';
+import { useState, useEffect } from 'react';
+import { Card, Button, Table, Space, Modal, Form, Input, Checkbox, Tooltip, message } from 'antd';
 import { PlusOutlined, EditOutlined, CopyOutlined, DeleteOutlined, ArrowUpOutlined, ArrowDownOutlined, FileTextOutlined } from '@ant-design/icons';
 import type { ColumnsType } from 'antd/es/table';
+import { getDictSelectOption } from '@/services/system/dict';
 
 const { TextArea } = Input;
 
@@ -196,11 +197,25 @@ function TemplateConfigForm({ template, onClose }: { template: StageTemplate | n
     { id: '1', name: '立项阶段', order: 1, requiredFiles: [] }
   ]);
 
-  const standardFiles = [
-    '项目建议书', '可行性研究报告', '初步设计文件', '施工图设计文件',
-    '招标文件', '投标文件', '合同文件', '施工组织设计',
-    '监理规划', '质量检测报告', '竣工验收报告', '财务决算报告'
-  ];
+  const [standardFiles, setStandardFiles] = useState<Array<{ label: string; value: string }>>([]);
+  const [loading, setLoading] = useState(false);
+
+  // 从数据字典加载标准文件配置
+  useEffect(() => {
+    const fetchStandardFiles = async () => {
+      setLoading(true);
+      try {
+        const options = await getDictSelectOption('bams_file_conf');
+        setStandardFiles(options);
+      } catch (error) {
+        console.error('加载标准文件配置失败:', error);
+        message.error('加载标准文件配置失败');
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchStandardFiles();
+  }, []);
 
   const addStage = () => {
     const newStage = {
@@ -366,7 +381,10 @@ function TemplateConfigForm({ template, onClose }: { template: StageTemplate | n
                 }
               >
                 <div>
-                  <div style={{ marginBottom: 8, fontWeight: 500 }}>标准文件配置</div>
+                  <div style={{ marginBottom: 8, fontWeight: 500 }}>
+                    标准文件配置
+                    {loading && <span style={{ marginLeft: 8, fontSize: 12, color: '#999' }}>加载中...</span>}
+                  </div>
                   <div style={{
                     border: '1px solid #d9d9d9',
                     borderRadius: 6,
@@ -375,19 +393,25 @@ function TemplateConfigForm({ template, onClose }: { template: StageTemplate | n
                     overflowY: 'auto',
                     backgroundColor: '#fff'
                   }}>
-                    <Checkbox.Group
-                      value={stage.requiredFiles}
-                      onChange={(checkedValues) => updateStage(stage.id, 'requiredFiles', checkedValues)}
-                      style={{ width: '100%' }}
-                    >
-                      <Space direction="vertical" style={{ width: '100%' }} size={[8, 8]}>
-                        {standardFiles.map(file => (
-                          <Checkbox key={file} value={file}>
-                            {file}
-                          </Checkbox>
-                        ))}
-                      </Space>
-                    </Checkbox.Group>
+                    {standardFiles.length > 0 ? (
+                      <Checkbox.Group
+                        value={stage.requiredFiles}
+                        onChange={(checkedValues) => updateStage(stage.id, 'requiredFiles', checkedValues)}
+                        style={{ width: '100%' }}
+                      >
+                        <Space direction="vertical" style={{ width: '100%' }} size={[8, 8]}>
+                          {standardFiles.map(file => (
+                            <Checkbox key={file.value} value={file.value}>
+                              {file.label}
+                            </Checkbox>
+                          ))}
+                        </Space>
+                      </Checkbox.Group>
+                    ) : (
+                      <div style={{ textAlign: 'center', color: '#999', padding: '20px 0' }}>
+                        {loading ? '正在加载标准文件配置...' : '暂无标准文件配置'}
+                      </div>
+                    )}
                   </div>
                   <div style={{ marginTop: 8, fontSize: 12, color: 'rgba(0, 0, 0, 0.45)' }}>
                     已选择文件: {stage.requiredFiles.length} 个
