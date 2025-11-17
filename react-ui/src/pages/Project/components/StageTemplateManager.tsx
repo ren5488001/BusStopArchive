@@ -267,8 +267,34 @@ function TemplateConfigForm({ template, onClose }: { template: StageTemplate | n
 
   const handleSubmit = async () => {
     try {
+      // 先验证基础表单
       const values = await form.validateFields();
+
+      // 验证阶段配置
+      if (stages.length === 0) {
+        message.error('请至少添加一个阶段');
+        return;
+      }
+
+      // 验证每个阶段的名称和文件
+      for (let i = 0; i < stages.length; i++) {
+        const stage = stages[i];
+
+        // 验证阶段名称
+        if (!stage.name || stage.name.trim() === '') {
+          message.error(`阶段 ${stage.order} 必须选择阶段名称`);
+          return;
+        }
+
+        // 验证标准文件
+        if (!stage.requiredFiles || stage.requiredFiles.length === 0) {
+          message.error(`阶段 ${stage.order} (${stage.name}) 至少选择一个标准文件`);
+          return;
+        }
+      }
+
       console.log('保存模板:', { ...values, stages });
+      message.success('模板保存成功');
       onClose();
     } catch (error) {
       console.error('表单验证失败:', error);
