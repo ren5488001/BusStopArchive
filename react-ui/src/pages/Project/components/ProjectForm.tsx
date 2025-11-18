@@ -1,272 +1,215 @@
-import { useState, useEffect } from 'react';
-import { Modal, Form, Input, Select, InputNumber, Button, Card, Tag, Space } from 'antd';
-import { InfoCircleOutlined, EnvironmentOutlined, FileTextOutlined } from '@ant-design/icons';
+import { useState, useEffect, memo } from 'react';
+import { Modal, Form, Input, Select, InputNumber, message, Spin, Space } from 'antd';
+import { addProject, updateProject, type ProjectType } from '@/services/bams/project';
+import { getTemplateList, type StageTemplateType } from '@/services/bams/stageTemplate';
 
 const { TextArea } = Input;
-const { Option } = Select;
-
-interface Project {
-  id?: string;
-  code: string;
-  name: string;
-  template: string;
-  status: string;
-  manager: string;
-  latitude: number;
-  longitude: number;
-  description: string;
-}
-
-interface StageTemplate {
-  id: string;
-  name: string;
-  stageCount: number;
-  stages: Array<{
-    id: string;
-    name: string;
-    order: number;
-    requiredFiles: string[];
-    responsible: string;
-  }>;
-}
 
 interface ProjectFormProps {
-  project: Project | null;
-  templates: StageTemplate[];
+  project: ProjectType | null;
   onClose: () => void;
 }
 
-export default function ProjectForm({ project, templates, onClose }: ProjectFormProps) {
+/**
+ * 项目表单组件
+ * 使用 React.memo 优化性能，避免不必要的重渲染
+ */
+const ProjectForm = memo(({ project, onClose }: ProjectFormProps) => {
   const [form] = Form.useForm();
-  const [selectedTemplate, setSelectedTemplate] = useState<StageTemplate | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [templates, setTemplates] = useState<StageTemplateType[]>([]);
+  const [templatesLoading, setTemplatesLoading] = useState(false);
+  const [originalTemplateId, setOriginalTemplateId] = useState<number | undefined>();
 
+  // 加载阶段模板列表
+  useEffect(() => {
+    const loadTemplates = async () => {
+      setTemplatesLoading(true);
+      try {
+        const response = await getTemplateList({ status: '0' });
+        setTemplates(response.rows || []);
+      } catch (error) {
+        message.error('加载模板列表失败');
+      } finally {
+        setTemplatesLoading(false);
+      }
+    };
+    loadTemplates();
+  }, []);
+
+  // 初始化表单数据
   useEffect(() => {
     if (project) {
+      setOriginalTemplateId(project.templateId);
       form.setFieldsValue({
-        ...project,
+        projectName: project.projectName,
+        projectManager: project.projectManager,
+        templateId: project.templateId,
+        latitude: project.latitude,
+        longitude: project.longitude,
+        projectDesc: project.projectDesc,
       });
-      const template = templates.find(t => t.name === project.template);
-      setSelectedTemplate(template || null);
     } else {
+      setOriginalTemplateId(undefined);
       form.resetFields();
-      setSelectedTemplate(null);
     }
-  }, [project, templates, form]);
+  }, [project, form]);
 
-  const handleTemplateChange = (templateId: string) => {
-    const template = templates.find(t => t.id === templateId);
-    setSelectedTemplate(template || null);
-    form.setFieldValue('template', template?.name || '');
+  // 处理模板切换
+  const handleTemplateChange = (value: number) => {
+    // 如果是编辑模式，且模板发生了变化，显示警告
+    if (project && originalTemplateId && value !== originalTemplateId) {
+      Modal.confirm({
+        title: '警告',
+        content: '切换模板将删除原有的阶段配置，确定要继续吗？',
+        okText: '确定',
+        cancelText: '取消',
+        okType: 'danger',
+        onOk: () => {
+          // 用户确认，保持新选择的模板
+          form.setFieldsValue({ templateId: value });
+        },
+        onCancel: () => {
+          // 用户取消，恢复原模板
+          form.setFieldsValue({ templateId: originalTemplateId });
+        },
+      });
+    }
   };
 
   const handleSubmit = async () => {
     try {
       const values = await form.validateFields();
-      const formData = {
-        ...values,
-      };
+      setLoading(true);
 
-      if (!project) {
-        // 新增项目时，系统自动生成项目编号
-        const newProjectCode = `PRJ${Date.now().toString().slice(-8)}`;
-        console.log('新增项目数据:', { ...formData, code: newProjectCode });
+      if (project) {
+        // 更新项目
+        await updateProject({
+          ...values,
+          projectId: project.projectId,
+        });
+        message.success('更新成功');
       } else {
-        console.log('更新项目数据:', formData);
+        // 新增项目
+        await addProject(values);
+        message.success('新增成功');
       }
 
       onClose();
-    } catch (error) {
-      console.error('表单验证失败:', error);
+    } catch (error: any) {
+      message.error(error.msg || '操作失败');
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
     <Modal
       title={project ? '编辑项目' : '新增项目'}
-      open={true}
+      open
+      onOk={handleSubmit}
       onCancel={onClose}
-      width={900}
-      footer={[
-        <Button key="cancel" onClick={onClose}>
-          取消
-        </Button>,
-        <Button key="submit" type="primary" onClick={handleSubmit}>
-          {project ? '更新项目' : '创建项目'}
-        </Button>,
-      ]}
+      width={720}
+      confirmLoading={loading}
+      maskClosable={false}
     >
-      <Form
-        form={form}
-        layout="vertical"
-        initialValues={{
-          status: '计划中',
-        }}
-      >
-        {/* 基础信息 */}
-        <Card
-          title={
-            <Space>
-              <InfoCircleOutlined style={{ color: '#1890ff' }} />
-              基础信息
-            </Space>
-          }
-          style={{ marginBottom: 16 }}
+      <Spin spinning={templatesLoading}>
+        <Form
+          form={form}
+          layout="vertical"
+          autoComplete="off"
         >
           <Form.Item
-            name="code"
-            label="项目编号"
-            hidden={!project}
-            style={{ display: project ? 'block' : 'none' }}
-          >
-            <Input disabled placeholder="系统自动生成" />
-          </Form.Item>
-
-          <Form.Item
-            name="name"
+            name="projectName"
             label="项目名称"
-            rules={[{ required: true, message: '请输入项目名称' }]}
+            rules={[
+              { required: true, message: '请输入项目名称' },
+              { max: 200, message: '项目名称不能超过200个字符' },
+            ]}
           >
             <Input placeholder="请输入项目名称" />
           </Form.Item>
 
-          <Space.Compact style={{ width: '100%', gap: 16 }}>
-            <Form.Item
-              name="manager"
-              label="项目负责人"
-              rules={[{ required: true, message: '请选择负责人' }]}
-              style={{ flex: 1 }}
-            >
-              <Select placeholder="请选择项目负责人">
-                <Option value="张三">张三</Option>
-                <Option value="李四">李四</Option>
-                <Option value="王五">王五</Option>
-                <Option value="赵六">赵六</Option>
-              </Select>
-            </Form.Item>
-
-            <Form.Item
-              name="status"
-              label="项目状态"
-              style={{ flex: 1 }}
-            >
-              <Select placeholder="请选择项目状态">
-                <Option value="计划中">计划中</Option>
-                <Option value="在建中">在建中</Option>
-                <Option value="已竣工">已竣工</Option>
-                <Option value="暂停">暂停</Option>
-              </Select>
-            </Form.Item>
-          </Space.Compact>
+          <Form.Item
+            name="projectManager"
+            label="项目负责人"
+            rules={[
+              { max: 100, message: '项目负责人不能超过100个字符' },
+            ]}
+          >
+            <Input placeholder="请输入项目负责人" />
+          </Form.Item>
 
           <Form.Item
-            name="template"
-            label="建设阶段模板"
-            rules={[{ required: true, message: '请选择阶段模板' }]}
+            name="templateId"
+            label="阶段模板"
+            tooltip="选择模板后，系统会自动为项目配置相应的建设阶段"
           >
             <Select
               placeholder="请选择阶段模板"
+              allowClear
+              loading={templatesLoading}
               onChange={handleTemplateChange}
             >
-              {templates.map(template => (
-                <Option key={template.id} value={template.id}>
-                  {template.name} ({template.stageCount}个阶段)
-                </Option>
+              {templates.map((template) => (
+                <Select.Option key={template.templateId} value={template.templateId}>
+                  {template.templateName} ({template.stageCount}个阶段)
+                </Select.Option>
               ))}
             </Select>
           </Form.Item>
 
-          {/* 模板预览 */}
-          {selectedTemplate && (
-            <Card
-              title="模板预览"
-              size="small"
-              style={{ marginTop: 16, backgroundColor: '#fafafa' }}
-            >
-              <Space direction="vertical" style={{ width: '100%' }} size="middle">
-                {selectedTemplate.stages.map((stage, index) => (
-                  <div key={stage.id} style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
-                    <Tag color="blue" style={{ marginTop: 4 }}>
-                      {index + 1}
-                    </Tag>
-                    <div style={{ flex: 1 }}>
-                      <div style={{ fontWeight: 500, marginBottom: 4 }}>{stage.name}</div>
-                      <div style={{ fontSize: 12, color: 'rgba(0, 0, 0, 0.45)', marginBottom: 8 }}>
-                        应归档文件: {stage.requiredFiles.length} 个
-                      </div>
-                      {stage.requiredFiles.length > 0 && (
-                        <Space wrap size={[8, 8]}>
-                          {stage.requiredFiles.slice(0, 3).map(file => (
-                            <Tag key={file} color="blue">{file}</Tag>
-                          ))}
-                          {stage.requiredFiles.length > 3 && (
-                            <Tag>+{stage.requiredFiles.length - 3}个</Tag>
-                          )}
-                        </Space>
-                      )}
-                    </div>
-                  </div>
-                ))}
-              </Space>
-            </Card>
-          )}
+          <Form.Item label="GIS坐标">
+            <Space.Compact style={{ width: '100%' }}>
+              <Form.Item
+                name="latitude"
+                noStyle
+                rules={[
+                  { type: 'number', min: -90, max: 90, message: '纬度范围：-90~90' },
+                ]}
+              >
+                <InputNumber
+                  style={{ width: '50%' }}
+                  placeholder="纬度"
+                  precision={6}
+                />
+              </Form.Item>
+              <Form.Item
+                name="longitude"
+                noStyle
+                rules={[
+                  { type: 'number', min: -180, max: 180, message: '经度范围：-180~180' },
+                ]}
+              >
+                <InputNumber
+                  style={{ width: '50%' }}
+                  placeholder="经度"
+                  precision={6}
+                />
+              </Form.Item>
+            </Space.Compact>
+          </Form.Item>
 
-          <Form.Item name="description" label="项目描述">
+          <Form.Item
+            name="projectDesc"
+            label="项目描述"
+            rules={[
+              { max: 1000, message: '项目描述不能超过1000个字符' },
+            ]}
+          >
             <TextArea
               rows={4}
-              placeholder="请输入项目描述..."
+              placeholder="请输入项目描述"
+              showCount
+              maxLength={1000}
             />
           </Form.Item>
-        </Card>
-
-        {/* GIS坐标信息 */}
-        <Card
-          title={
-            <Space>
-              <EnvironmentOutlined style={{ color: '#52c41a' }} />
-              GIS坐标信息
-            </Space>
-          }
-        >
-          <Space.Compact style={{ width: '100%', gap: 16 }}>
-            <Form.Item
-              name="latitude"
-              label="纬度"
-              style={{ flex: 1 }}
-            >
-              <InputNumber
-                style={{ width: '100%' }}
-                step={0.000001}
-                placeholder="请输入纬度"
-              />
-            </Form.Item>
-
-            <Form.Item
-              name="longitude"
-              label="经度"
-              style={{ flex: 1 }}
-            >
-              <InputNumber
-                style={{ width: '100%' }}
-                step={0.000001}
-                placeholder="请输入经度"
-              />
-            </Form.Item>
-          </Space.Compact>
-
-          <Button
-            type="default"
-            icon={<EnvironmentOutlined />}
-            onClick={() => {
-              // TODO: 实现地图选择功能
-              console.log('在地图上选择位置');
-            }}
-            style={{ marginTop: 16 }}
-          >
-            在地图上选择位置
-          </Button>
-        </Card>
-      </Form>
+        </Form>
+      </Spin>
     </Modal>
   );
-}
+});
 
+ProjectForm.displayName = 'ProjectForm';
+
+export default ProjectForm;

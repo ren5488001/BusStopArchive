@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.system.mapper.BamsProjectStageMapper">
+
+    <resultMap type="BamsProjectStage" id="BamsProjectStageResult">
+        <result property="stageId"    column="stage_id"    />
+        <result property="projectId"    column="project_id"    />
+        <result property="stageName"    column="stage_name"    />
+        <result property="stageOrder"    column="stage_order"    />
+        <result property="requiredFiles"    column="required_files"    />
+        <result property="requiredFileCount"    column="required_file_count"    />
+        <result property="archivedFileCount"    column="archived_file_count"    />
+        <result property="completenessRate"    column="completeness_rate"    />
+        <result property="createTime"    column="create_time"    />
+        <result property="updateTime"    column="update_time"    />
+    </resultMap>
+
+    <sql id="selectStageVo">
+        select stage_id, project_id, stage_name, stage_order, required_files,
+               required_file_count, archived_file_count, completeness_rate,
+               create_time, update_time
+        from bams_project_stage
+    </sql>
+
+    <select id="selectByProjectId" parameterType="Long" resultMap="BamsProjectStageResult">
+        <include refid="selectStageVo"/>
+        where project_id = #{projectId}
+        order by stage_order
+    </select>
+
+    <select id="selectByStageId" parameterType="Long" resultMap="BamsProjectStageResult">
+        <include refid="selectStageVo"/>
+        where stage_id = #{stageId}
+    </select>
+
+    <insert id="batchInsert" parameterType="java.util.List">
+        insert into bams_project_stage
+        (project_id, stage_name, stage_order, required_files, required_file_count,
+         archived_file_count, completeness_rate, create_time, update_time)
+        values
+        <foreach item="item" collection="list" separator=",">
+            (#{item.projectId}, #{item.stageName}, #{item.stageOrder}, #{item.requiredFiles},
+             #{item.requiredFileCount}, #{item.archivedFileCount}, #{item.completenessRate},
+             sysdate(), sysdate())
+        </foreach>
+    </insert>
+
+    <update id="updateById" parameterType="BamsProjectStage">
+        update bams_project_stage
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="stageName != null and stageName != ''">stage_name = #{stageName},</if>
+            <if test="stageOrder != null">stage_order = #{stageOrder},</if>
+            <if test="requiredFiles != null">required_files = #{requiredFiles},</if>
+            <if test="requiredFileCount != null">required_file_count = #{requiredFileCount},</if>
+            <if test="archivedFileCount != null">archived_file_count = #{archivedFileCount},</if>
+            <if test="completenessRate != null">completeness_rate = #{completenessRate},</if>
+            update_time = sysdate()
+        </trim>
+        where stage_id = #{stageId}
+    </update>
+
+    <delete id="deleteByProjectId" parameterType="Long">
+        delete from bams_project_stage where project_id = #{projectId}
+    </delete>
+
+</mapper>

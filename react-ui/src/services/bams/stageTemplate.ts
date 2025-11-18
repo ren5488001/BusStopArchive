@@ -53,8 +53,11 @@ export async function deleteTemplate(templateIds: string) {
 }
 
 // 复制阶段模板
-export async function copyTemplate(templateId: number) {
+export async function copyTemplate(templateId: number, newName?: string) {
   return request(`/api/bams/stage/template/copy/${templateId}`, {
     method: 'POST',
+    params: {
+      newName,
+    },
   });
 }

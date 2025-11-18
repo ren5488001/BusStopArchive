@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import com.ruoyi.common.annotation.Log;
 import com.ruoyi.common.core.controller.BaseController;
@@ -91,9 +92,9 @@ public class BamsStageTemplateController extends BaseController
     @PreAuthorize("@ss.hasPermi('bams:template:copy')")
     @Log(title = "阶段模板", businessType = BusinessType.INSERT)
     @PostMapping("/copy/{templateId}")
-    public AjaxResult copy(@PathVariable Long templateId)
+    public AjaxResult copy(@PathVariable Long templateId, @RequestParam(required = false) String newName)
     {
-        Long newTemplateId = templateService.copyTemplate(templateId);
+        Long newTemplateId = templateService.copyTemplate(templateId, newName);
         return success(newTemplateId);
     }
 }

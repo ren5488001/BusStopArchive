@@ -39,14 +39,30 @@ export default function StageTemplateManager() {
   const [loading, setLoading] = useState(false);
   const [showTemplateForm, setShowTemplateForm] = useState(false);
   const [editingTemplate, setEditingTemplate] = useState<StageTemplate | null>(null);
+  const [pagination, setPagination] = useState({
+    current: 1,
+    pageSize: 10,
+    total: 0,
+  });
+  const [showCopyModal, setShowCopyModal] = useState(false);
+  const [copyingTemplate, setCopyingTemplate] = useState<StageTemplate | null>(null);
+  const [copyTemplateName, setCopyTemplateName] = useState('');
 
   // 加载模板列表
-  const loadTemplates = async () => {
+  const loadTemplates = async (pageNum: number = 1, pageSize: number = 10) => {
     setLoading(true);
     try {
-      const response = await getTemplateList();
+      const response = await getTemplateList({
+        pageNum,
+        pageSize,
+      });
       if (response.code === 200) {
         setTemplates(response.rows || []);
+        setPagination({
+          current: pageNum,
+          pageSize,
+          total: response.total || 0,
+        });
       } else {
         message.error(response.msg || '加载模板列表失败');
       }
@@ -59,7 +75,7 @@ export default function StageTemplateManager() {
   };
 
   useEffect(() => {
-    loadTemplates();
+    loadTemplates(1, 10);
   }, []);
 
   const handleNewTemplate = () => {
@@ -96,7 +112,11 @@ export default function StageTemplateManager() {
           const response = await deleteTemplate(templateId.toString());
           if (response.code === 200) {
             message.success('删除成功');
-            loadTemplates();
+            // 如果当前页只有一条数据且不是第一页，则返回上一页
+            const targetPage = templates.length === 1 && pagination.current > 1
+              ? pagination.current - 1
+              : pagination.current;
+            loadTemplates(targetPage, pagination.pageSize);
           } else {
             message.error(response.msg || '删除失败');
           }
@@ -108,12 +128,26 @@ export default function StageTemplateManager() {
     });
   };
 
-  const handleCopyTemplate = async (templateId: number) => {
+  const handleCopyTemplate = (template: StageTemplate) => {
+    if (!template.templateId) return;
+    setCopyingTemplate(template);
+    setCopyTemplateName(template.templateName + '（副本）');
+    setShowCopyModal(true);
+  };
+
+  const handleConfirmCopy = async () => {
+    if (!copyingTemplate?.templateId) return;
+
+    const newName = copyTemplateName.trim() || copyingTemplate.templateName + '（副本）';
+
     try {
-      const response = await copyTemplate(templateId);
+      const response = await copyTemplate(copyingTemplate.templateId, newName);
       if (response.code === 200) {
         message.success('复制成功');
-        loadTemplates();
+        setShowCopyModal(false);
+        setCopyingTemplate(null);
+        setCopyTemplateName('');
+        loadTemplates(1, pagination.pageSize);
       } else {
         message.error(response.msg || '复制失败');
       }
@@ -123,13 +157,19 @@ export default function StageTemplateManager() {
     }
   };
 
+  const handleCancelCopy = () => {
+    setShowCopyModal(false);
+    setCopyingTemplate(null);
+    setCopyTemplateName('');
+  };
+
   const handleCloseForm = () => {
     setShowTemplateForm(false);
     setEditingTemplate(null);
   };
 
   const handleSaveSuccess = () => {
-    loadTemplates();
+    loadTemplates(1, pagination.pageSize);
     handleCloseForm();
   };
 
@@ -206,7 +246,7 @@ export default function StageTemplateManager() {
             <Button
               type="link"
               icon={<CopyOutlined />}
-              onClick={() => record.templateId && handleCopyTemplate(record.templateId)}
+              onClick={() => handleCopyTemplate(record)}
             >
               复制
             </Button>
@@ -252,9 +292,15 @@ export default function StageTemplateManager() {
           rowKey="templateId"
           loading={loading}
           pagination={{
+            current: pagination.current,
+            pageSize: pagination.pageSize,
+            total: pagination.total,
             showSizeChanger: true,
             showQuickJumper: true,
             showTotal: (total) => `共 ${total} 条`,
+            onChange: (page, pageSize) => {
+              loadTemplates(page, pageSize);
+            },
           }}
         />
       </Card>
@@ -267,6 +313,27 @@ export default function StageTemplateManager() {
           onSuccess={handleSaveSuccess}
         />
       )}
+
+      {/* 复制模板对话框 */}
+      <Modal
+        title="复制模板"
+        open={showCopyModal}
+        onOk={handleConfirmCopy}
+        onCancel={handleCancelCopy}
+        okText="确认"
+        cancelText="取消"
+      >
+        <Form layout="vertical" style={{ marginTop: 16 }}>
+          <Form.Item label="新模板名称" required>
+            <Input
+              value={copyTemplateName}
+              onChange={(e) => setCopyTemplateName(e.target.value)}
+              placeholder="请输入新模板名称"
+              autoFocus
+            />
+          </Form.Item>
+        </Form>
+      </Modal>
     </Space>
   );
 }
@@ -300,6 +367,21 @@ function TemplateConfigForm({
   const [projectPhases, setProjectPhases] = useState<Array<{ label: string; value: string }>>([]);
   const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+
+  // 当 template 的 ID 变化时，重新初始化 stages
+  useEffect(() => {
+    if (template?.stages) {
+      setStages(template.stages.map((s) => ({
+        id: s.detailId?.toString() || Date.now().toString(),
+        name: s.stageName,
+        order: s.stageOrder,
+        requiredFiles: s.requiredFileList || [],
+      })));
+    } else {
+      setStages([{ id: '1', name: '', order: 1, requiredFiles: [] }]);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [template?.templateId]);
 
   // 从数据字典加载配置数据
   useEffect(() => {
@@ -341,7 +423,7 @@ function TemplateConfigForm({
   };
 
   const updateStage = (stageId: string, field: string, value: any) => {
-    setStages(stages.map(stage =>
+    setStages(prevStages => prevStages.map(stage =>
       stage.id === stageId ? { ...stage, [field]: value } : stage
     ));
   };
@@ -365,6 +447,12 @@ function TemplateConfigForm({
     setStages(newStages);
   };
 
+  // 检查阶段名称是否重复
+  const isDuplicateStageName = (stageId: string, stageName: string) => {
+    if (!stageName) return false;
+    return stages.some(stage => stage.id !== stageId && stage.name === stageName);
+  };
+
   const handleSubmit = async () => {
     try {
       // 先验证基础表单
@@ -377,6 +465,7 @@ function TemplateConfigForm({
       }
 
       // 验证每个阶段的名称和文件
+      const stageNames = new Set<string>();
       for (let i = 0; i < stages.length; i++) {
         const stage = stages[i];
 
@@ -386,9 +475,17 @@ function TemplateConfigForm({
           return;
         }
 
+        // 验证阶段名称不重复
+        if (stageNames.has(stage.name)) {
+          message.error('阶段名称重复');
+          return;
+        }
+        stageNames.add(stage.name);
+
         // 验证标准文件
         if (!stage.requiredFiles || stage.requiredFiles.length === 0) {
-          message.error(`阶段 ${stage.order} (${stage.name}) 至少选择一个标准文件`);
+          const stageLabel = projectPhases.find(p => p.value === stage.name)?.label || stage.name;
+          message.error(`${stageLabel} 至少选择一个标准文件`);
           return;
         }
       }
@@ -511,18 +608,26 @@ function TemplateConfigForm({
                     }}>
                       阶段 {stage.order}
                     </span>
-                    <Select
-                      value={stage.name}
-                      onChange={(value) => updateStage(stage.id, 'name', value)}
-                      placeholder="请选择阶段名称"
-                      style={{ width: 200 }}
-                      options={projectPhases}
-                      loading={loading}
-                      showSearch
-                      filterOption={(input, option) =>
-                        (option?.label ?? '').toLowerCase().includes(input.toLowerCase())
-                      }
-                    />
+                    <div>
+                      <Select
+                        value={stage.name}
+                        onChange={(value) => updateStage(stage.id, 'name', value)}
+                        placeholder="请选择阶段名称"
+                        style={{ width: 200 }}
+                        options={projectPhases}
+                        loading={loading}
+                        showSearch
+                        filterOption={(input, option) =>
+                          (option?.label ?? '').toLowerCase().includes(input.toLowerCase())
+                        }
+                        status={isDuplicateStageName(stage.id, stage.name) ? 'error' : undefined}
+                      />
+                      {isDuplicateStageName(stage.id, stage.name) && (
+                        <div style={{ color: '#ff4d4f', fontSize: 12, marginTop: 4 }}>
+                          阶段名称重复
+                        </div>
+                      )}
+                    </div>
                     <Space>
                       <Tooltip title="上移">
                         <Button

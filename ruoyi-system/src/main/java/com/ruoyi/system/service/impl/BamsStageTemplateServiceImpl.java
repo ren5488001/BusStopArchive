@@ -1,9 +1,12 @@
 package com.ruoyi.system.service.impl;
 
 import java.util.List;
+import java.util.Set;
+import java.util.HashSet;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import com.ruoyi.common.exception.ServiceException;
 import com.ruoyi.common.utils.SecurityUtils;
 import com.ruoyi.system.domain.BamsStageTemplate;
 import com.ruoyi.system.domain.BamsStageTemplateDetail;
@@ -59,6 +62,9 @@ public class BamsStageTemplateServiceImpl implements IBamsStageTemplateService
     @Transactional
     public int insertTemplate(BamsStageTemplate template)
     {
+        // 验证阶段名称是否重复
+        validateStageNames(template);
+
         // 设置创建人
         template.setCreateBy(SecurityUtils.getUsername());
         // 设置状态和删除标志
@@ -89,6 +95,9 @@ public class BamsStageTemplateServiceImpl implements IBamsStageTemplateService
     @Transactional
     public int updateTemplate(BamsStageTemplate template)
     {
+        // 验证阶段名称是否重复
+        validateStageNames(template);
+
         // 设置更新人
         template.setUpdateBy(SecurityUtils.getUsername());
         // 设置阶段总数
@@ -145,11 +154,12 @@ public class BamsStageTemplateServiceImpl implements IBamsStageTemplateService
      * 复制阶段模板
      *
      * @param templateId 要复制的模板ID
+     * @param newName 新模板名称（可选，为空则自动生成）
      * @return 新模板ID
      */
     @Override
     @Transactional
-    public Long copyTemplate(Long templateId)
+    public Long copyTemplate(Long templateId, String newName)
     {
         // 查询原模板及其明细
         BamsStageTemplate sourceTemplate = templateMapper.selectTemplateById(templateId);
@@ -160,7 +170,15 @@ public class BamsStageTemplateServiceImpl implements IBamsStageTemplateService
 
         // 创建新模板
         BamsStageTemplate newTemplate = new BamsStageTemplate();
-        newTemplate.setTemplateName(sourceTemplate.getTemplateName() + "（副本）");
+        // 使用传入的新名称，如果为空则使用默认规则
+        if (newName != null && !newName.trim().isEmpty())
+        {
+            newTemplate.setTemplateName(newName.trim());
+        }
+        else
+        {
+            newTemplate.setTemplateName(sourceTemplate.getTemplateName() + "（副本）");
+        }
         newTemplate.setTemplateDesc(sourceTemplate.getTemplateDesc());
         newTemplate.setStageCount(sourceTemplate.getStageCount());
         newTemplate.setStatus("0");
@@ -193,6 +211,33 @@ public class BamsStageTemplateServiceImpl implements IBamsStageTemplateService
                 detail.setTemplateId(template.getTemplateId());
             }
             detailMapper.batchInsertDetail(stages);
+        }
+    }
+
+    /**
+     * 验证阶段名称是否重复
+     *
+     * @param template 阶段模板信息
+     */
+    private void validateStageNames(BamsStageTemplate template)
+    {
+        List<BamsStageTemplateDetail> stages = template.getStages();
+        if (stages == null || stages.isEmpty())
+        {
+            return;
+        }
+
+        Set<String> stageNames = new HashSet<>();
+        for (BamsStageTemplateDetail detail : stages)
+        {
+            String stageName = detail.getStageName();
+            if (stageName != null && !stageName.trim().isEmpty())
+            {
+                if (!stageNames.add(stageName))
+                {
+                    throw new ServiceException("阶段名称重复");
+                }
+            }
         }
     }
 }

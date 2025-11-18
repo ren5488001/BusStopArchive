@@ -62,7 +62,8 @@ public interface IBamsStageTemplateService
      * 复制阶段模板
      *
      * @param templateId 要复制的模板ID
+     * @param newName 新模板名称（可选，为空则自动生成）
      * @return 新模板ID
      */
-    public Long copyTemplate(Long templateId);
+    public Long copyTemplate(Long templateId, String newName);
 }

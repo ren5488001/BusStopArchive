@@ -52,8 +52,29 @@ npm run test:coverage
 ### 后端开发
 
 ```bash
+# ========== 使用后端管理脚本（推荐） ==========
+./backend.sh {command}    # Linux/Mac
+backend.bat {command}     # Windows
+
+# 可用命令:
+./backend.sh start        # 启动后端服务
+./backend.sh stop         # 停止后端服务
+./backend.sh restart      # 重启后端服务
+./backend.sh status       # 查看服务状态
+./backend.sh logs         # 查看实时日志
+./backend.sh build        # 编译打包项目 (mvn clean package -DskipTests)
+./backend.sh install      # 编译并安装到本地仓库 (mvn clean install -DskipTests)
+./backend.sh rebuild      # 重新编译并重启服务
+./backend.sh clean        # 清理编译产物 (mvn clean)
+
+# Windows 双击运行 backend.bat 会显示交互式菜单
+
+# ========== 手动编译和运行 ==========
 # 编译整个项目
 mvn clean install
+
+# 编译打包（跳过测试）
+mvn clean package -DskipTests
 
 # 运行后端服务（在 ruoyi-admin 目录）
 cd ruoyi-admin
@@ -63,7 +84,7 @@ mvn spring-boot:run
 cd ruoyi-admin/target
 java -jar ruoyi-admin.jar
 
-# 快速启动脚本
+# ========== 旧版启动脚本（已弃用） ==========
 ./ry.sh     # Linux/Mac
 ry.bat      # Windows
 ```
