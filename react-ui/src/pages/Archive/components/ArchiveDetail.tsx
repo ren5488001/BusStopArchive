@@ -133,6 +133,7 @@ const ArchiveDetail: React.FC<ArchiveDetailProps> = ({ archive: initialArchive, 
         archiveCategory: values.archiveCategory,
         hasPaperMaterial: values.hasPaperMaterial,
         tags: values.tags ? JSON.stringify(values.tags) : undefined,
+        tagList: values.tags || [],  // 添加 tagList 字段供后端使用
         summary: values.summary,
         description: values.description,
       };
