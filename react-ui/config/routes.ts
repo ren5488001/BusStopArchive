@@ -101,6 +101,10 @@ export default [
     icon: 'fileText',
     routes: [
       {
+        path: '/archive',
+        redirect: '/archive/search',
+      },
+      {
         name: 'search',
         path: '/archive/search',
         component: './Archive/ArchiveSearch',

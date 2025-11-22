@@ -5,9 +5,10 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
 <mapper namespace="com.ruoyi.system.mapper.BamsStageTemplateDetailMapper">
 
     <resultMap type="BamsStageTemplateDetail" id="BamsStageTemplateDetailResult">
-        <result property="detailId"        column="detail_id"        />
+        <result property="id"              column="id"               />
         <result property="templateId"      column="template_id"      />
-        <result property="stageName"       column="stage_name"       />
+        <result property="stageId"         column="stage_id"         />
+        <result property="stageDisplayName" column="stage_display_name" />
         <result property="stageOrder"      column="stage_order"      />
         <result property="requiredFiles"   column="required_files"   />
         <result property="createTime"      column="create_time"      />
@@ -15,7 +16,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
     </resultMap>
 
     <sql id="selectDetailVo">
-        select detail_id, template_id, stage_name, stage_order, required_files, create_time, update_time
+        select id, template_id, stage_id, stage_display_name, stage_order, required_files, create_time, update_time
         from bams_stage_template_detail
     </sql>
 
@@ -27,12 +28,13 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
 
     <insert id="batchInsertDetail">
         insert into bams_stage_template_detail (
-            template_id, stage_name, stage_order, required_files, create_time
+            template_id, stage_id, stage_display_name, stage_order, required_files, create_time
         ) values
         <foreach item="item" collection="list" separator=",">
             (
                 #{item.templateId},
-                #{item.stageName},
+                #{item.stageId},
+                #{item.stageDisplayName},
                 #{item.stageOrder},
                 #{item.requiredFiles},
                 sysdate()

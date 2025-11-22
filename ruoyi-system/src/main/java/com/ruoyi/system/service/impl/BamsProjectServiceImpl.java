@@ -18,6 +18,7 @@ import com.ruoyi.system.mapper.BamsProjectMapper;
 import com.ruoyi.system.mapper.BamsProjectStageMapper;
 import com.ruoyi.system.service.IBamsProjectService;
 import com.ruoyi.system.service.IBamsStageTemplateService;
+import com.ruoyi.system.service.ISysDictDataService;
 
 /**
  * 项目信息Service业务层处理
@@ -35,6 +36,9 @@ public class BamsProjectServiceImpl implements IBamsProjectService
 
     @Autowired
     private IBamsStageTemplateService stageTemplateService;
+
+    @Autowired
+    private ISysDictDataService dictDataService;
 
     /**
      * 查询项目列表
@@ -213,6 +217,7 @@ public class BamsProjectServiceImpl implements IBamsProjectService
 
     /**
      * 查询项目的阶段列表
+     * 将 requiredFiles 字段中的字典值翻译成对象数组（包含ID和中文名称）
      *
      * @param projectId 项目ID
      * @return 阶段列表
@@ -220,7 +225,52 @@ public class BamsProjectServiceImpl implements IBamsProjectService
     @Override
     public List<BamsProjectStage> selectProjectStages(Long projectId)
     {
-        return projectStageMapper.selectByProjectId(projectId);
+        List<BamsProjectStage> stages = projectStageMapper.selectByProjectId(projectId);
+
+        // 翻译 requiredFiles 字段中的字典值为对象数组
+        for (BamsProjectStage stage : stages)
+        {
+            if (StringUtils.isNotEmpty(stage.getRequiredFiles()))
+            {
+                List<BamsProjectStage.FileOption> fileOptions = translateRequiredFilesToOptions(stage.getRequiredFiles());
+                stage.setRequiredFileList(fileOptions);
+            }
+        }
+
+        return stages;
+    }
+
+    /**
+     * 翻译标准文件字段为对象数组
+     * 将字典值（如 "design_file,construction_file"）翻译成对象数组
+     * 每个对象包含 id（字典值）和 name（中文名称）
+     *
+     * @param requiredFiles 字典值列表，逗号分隔
+     * @return 文件选项列表
+     */
+    private List<BamsProjectStage.FileOption> translateRequiredFilesToOptions(String requiredFiles)
+    {
+        String[] dictValues = requiredFiles.split(",");
+        List<BamsProjectStage.FileOption> fileOptions = new ArrayList<>();
+
+        for (String dictValue : dictValues)
+        {
+            String trimmedValue = dictValue.trim();
+            if (StringUtils.isNotEmpty(trimmedValue))
+            {
+                // 从数据字典 bams_file_conf 查询中文名称
+                String dictLabel = dictDataService.selectDictLabel("bams_file_conf", trimmedValue);
+
+                // 如果找到对应的中文名称，使用中文；否则使用字典值本身
+                String displayName = StringUtils.isNotEmpty(dictLabel) ? dictLabel : trimmedValue;
+
+                // 创建文件选项对象
+                BamsProjectStage.FileOption option = new BamsProjectStage.FileOption(trimmedValue, displayName);
+                fileOptions.add(option);
+            }
+        }
+
+        return fileOptions;
     }
 
     /**
@@ -327,7 +377,8 @@ public class BamsProjectServiceImpl implements IBamsProjectService
         {
             BamsProjectStage stage = new BamsProjectStage();
             stage.setProjectId(projectId);
-            stage.setStageName(detail.getStageName());
+            stage.setStageId(detail.getStageId());
+            stage.setStageDisplayName(detail.getStageDisplayName());
             stage.setStageOrder(detail.getStageOrder());
             stage.setRequiredFiles(detail.getRequiredFiles());
 

@@ -1,5 +1,6 @@
 package com.ruoyi.system.domain;
 
+import java.util.List;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.apache.commons.lang3.builder.ToStringStyle;
 import com.ruoyi.common.core.domain.BaseEntity;
@@ -13,14 +14,17 @@ public class BamsProjectStage extends BaseEntity
 {
     private static final long serialVersionUID = 1L;
 
-    /** 阶段实例ID */
-    private Long stageId;
+    /** 主键ID */
+    private Long id;
 
     /** 项目ID */
     private Long projectId;
 
-    /** 阶段名称 */
-    private String stageName;
+    /** 阶段ID（字典键值：0,1,2,3） */
+    private String stageId;
+
+    /** 阶段显示名称（中文：立项,设计,施工,验收） */
+    private String stageDisplayName;
 
     /** 阶段顺序 */
     private Integer stageOrder;
@@ -37,14 +41,60 @@ public class BamsProjectStage extends BaseEntity
     /** 完整度（0-100） */
     private Integer completenessRate;
 
-    public Long getStageId()
+    /** 标准文件列表（翻译后的对象数组，用于前端展示） */
+    private List<FileOption> requiredFileList;
+
+    /**
+     * 文件选项内部类
+     * 用于返回标准文件的ID和中文名称
+     */
+    public static class FileOption
     {
-        return stageId;
+        /** 字典值（用于保存） */
+        private String id;
+
+        /** 中文名称（用于显示） */
+        private String name;
+
+        public FileOption()
+        {
+        }
+
+        public FileOption(String id, String name)
+        {
+            this.id = id;
+            this.name = name;
+        }
+
+        public String getId()
+        {
+            return id;
+        }
+
+        public void setId(String id)
+        {
+            this.id = id;
+        }
+
+        public String getName()
+        {
+            return name;
+        }
+
+        public void setName(String name)
+        {
+            this.name = name;
+        }
     }
 
-    public void setStageId(Long stageId)
+    public Long getId()
     {
-        this.stageId = stageId;
+        return id;
+    }
+
+    public void setId(Long id)
+    {
+        this.id = id;
     }
 
     public Long getProjectId()
@@ -57,14 +107,24 @@ public class BamsProjectStage extends BaseEntity
         this.projectId = projectId;
     }
 
-    public String getStageName()
+    public String getStageId()
     {
-        return stageName;
+        return stageId;
     }
 
-    public void setStageName(String stageName)
+    public void setStageId(String stageId)
     {
-        this.stageName = stageName;
+        this.stageId = stageId;
+    }
+
+    public String getStageDisplayName()
+    {
+        return stageDisplayName;
+    }
+
+    public void setStageDisplayName(String stageDisplayName)
+    {
+        this.stageDisplayName = stageDisplayName;
     }
 
     public Integer getStageOrder()
@@ -117,13 +177,24 @@ public class BamsProjectStage extends BaseEntity
         this.completenessRate = completenessRate;
     }
 
+    public List<FileOption> getRequiredFileList()
+    {
+        return requiredFileList;
+    }
+
+    public void setRequiredFileList(List<FileOption> requiredFileList)
+    {
+        this.requiredFileList = requiredFileList;
+    }
+
     @Override
     public String toString()
     {
         return new ToStringBuilder(this, ToStringStyle.MULTI_LINE_STYLE)
-            .append("stageId", getStageId())
+            .append("id", getId())
             .append("projectId", getProjectId())
-            .append("stageName", getStageName())
+            .append("stageId", getStageId())
+            .append("stageDisplayName", getStageDisplayName())
             .append("stageOrder", getStageOrder())
             .append("requiredFiles", getRequiredFiles())
             .append("requiredFileCount", getRequiredFileCount())

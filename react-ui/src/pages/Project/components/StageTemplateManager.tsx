@@ -16,8 +16,9 @@ const { TextArea } = Input;
 const { confirm } = Modal;
 
 interface StageDetail {
-  detailId?: number;
-  stageName: string;
+  id?: number;
+  stageId: string;
+  stageDisplayName: string;
   stageOrder: number;
   requiredFileList: string[];
 }
@@ -354,14 +355,7 @@ function TemplateConfigForm({
     name: string;
     order: number;
     requiredFiles: string[];
-  }>>(
-    template?.stages?.map((s) => ({
-      id: s.detailId?.toString() || Date.now().toString(),
-      name: s.stageName,
-      order: s.stageOrder,
-      requiredFiles: s.requiredFileList || [],
-    })) || [{ id: '1', name: '', order: 1, requiredFiles: [] }]
-  );
+  }>>([]);
 
   const [standardFiles, setStandardFiles] = useState<Array<{ label: string; value: string }>>([]);
   const [projectPhases, setProjectPhases] = useState<Array<{ label: string; value: string }>>([]);
@@ -371,9 +365,9 @@ function TemplateConfigForm({
   // 当 template 的 ID 变化时，重新初始化 stages
   useEffect(() => {
     if (template?.stages) {
-      setStages(template.stages.map((s) => ({
-        id: s.detailId?.toString() || Date.now().toString(),
-        name: s.stageName,
+      setStages(template.stages.map((s, index) => ({
+        id: s.id?.toString() || `new-${Date.now()}-${index}`,
+        name: s.stageId,
         order: s.stageOrder,
         requiredFiles: s.requiredFileList || [],
       })));
@@ -497,7 +491,8 @@ function TemplateConfigForm({
         templateDesc: values.desc,
         remark: values.desc,
         stages: stages.map(stage => ({
-          stageName: stage.name,
+          stageId: stage.name,
+          stageDisplayName: projectPhases.find(p => p.value === stage.name)?.label || stage.name,
           stageOrder: stage.order,
           requiredFileList: stage.requiredFiles
         }))

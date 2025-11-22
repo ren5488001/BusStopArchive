@@ -52,13 +52,21 @@ export type ProjectType = {
   remark?: string;
 };
 
+/** 文件选项类型 */
+export type FileOptionType = {
+  id: string; // 字典值
+  name: string; // 中文名称
+};
+
 /** 项目阶段类型 */
 export type ProjectStageType = {
-  stageId?: number;
+  id?: number; // 主键ID
   projectId?: number;
-  stageName: string;
+  stageId: string; // 阶段ID（字典键值: 0,1,2,3）
+  stageDisplayName: string; // 阶段显示名称: 立项,设计,施工,验收
   stageOrder: number;
-  requiredFiles?: string;
+  requiredFiles?: string; // 标准文件字典值（逗号分隔）
+  requiredFileList?: FileOptionType[]; // 标准文件列表（对象数组）
   requiredFileCount?: number;
   archivedFileCount?: number;
   completenessRate?: number;

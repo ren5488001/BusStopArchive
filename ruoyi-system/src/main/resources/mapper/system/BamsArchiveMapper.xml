@@ -1,0 +1,202 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.system.mapper.BamsArchiveMapper">
+
+    <resultMap type="BamsArchive" id="BamsArchiveResult">
+        <result property="archiveId"    column="archive_id"    />
+        <result property="archiveNumber"    column="archive_number"    />
+        <result property="title"    column="title"    />
+        <result property="projectId"    column="project_id"    />
+        <result property="projectCode"    column="project_code"    />
+        <result property="projectName"    column="project_name"    />
+        <result property="stage"    column="stage"    />
+        <result property="fileDate"    column="file_date"    />
+        <result property="fileStandard"    column="file_standard"    />
+        <result property="archiveCategory"    column="archive_category"    />
+        <result property="hasPaperMaterial"    column="has_paper_material"    />
+        <result property="archivalDate"    column="archival_date"    />
+        <result property="fileType"    column="file_type"    />
+        <result property="fileSize"    column="file_size"    />
+        <result property="description"    column="description"    />
+        <result property="tags"    column="tags"    />
+        <result property="summary"    column="summary"    />
+        <result property="currentVersion"    column="current_version"    />
+        <result property="versionCount"    column="version_count"    />
+        <result property="status"    column="status"    />
+        <result property="delFlag"    column="del_flag"    />
+        <result property="createBy"    column="create_by"    />
+        <result property="createTime"    column="create_time"    />
+        <result property="updateBy"    column="update_by"    />
+        <result property="updateTime"    column="update_time"    />
+        <result property="remark"    column="remark"    />
+    </resultMap>
+
+    <sql id="selectBamsArchiveVo">
+        select archive_id, archive_number, title, project_id, project_code, project_name, stage,
+               file_date, file_standard, archive_category, has_paper_material, archival_date,
+               file_type, file_size, description, tags, summary,
+               current_version, version_count, status, del_flag, create_by, create_time,
+               update_by, update_time, remark
+        from bams_archive
+    </sql>
+
+    <select id="selectBamsArchiveList" parameterType="BamsArchive" resultMap="BamsArchiveResult">
+        <include refid="selectBamsArchiveVo"/>
+        <where>
+            <if test="archiveNumber != null and archiveNumber != ''">
+                AND archive_number like concat('%', #{archiveNumber}, '%')
+            </if>
+            <if test="title != null and title != ''">
+                AND title like concat('%', #{title}, '%')
+            </if>
+            <if test="projectId != null">
+                AND project_id = #{projectId}
+            </if>
+            <if test="projectCode != null and projectCode != ''">
+                AND project_code = #{projectCode}
+            </if>
+            <if test="stage != null and stage != ''">
+                AND stage = #{stage}
+            </if>
+            <if test="fileStandard != null and fileStandard != ''">
+                AND file_standard = #{fileStandard}
+            </if>
+            <if test="archiveCategory != null and archiveCategory != ''">
+                AND archive_category = #{archiveCategory}
+            </if>
+            <if test="delFlag != null and delFlag != ''">
+                AND del_flag = #{delFlag}
+            </if>
+            <if test="status != null and status != ''">
+                AND status = #{status}
+            </if>
+            <if test="params.beginFileDate != null and params.beginFileDate != '' and params.endFileDate != null and params.endFileDate != ''">
+                AND file_date between #{params.beginFileDate} and #{params.endFileDate}
+            </if>
+        </where>
+        ORDER BY create_time DESC
+    </select>
+
+    <select id="selectBamsArchiveByArchiveId" parameterType="Long" resultMap="BamsArchiveResult">
+        <include refid="selectBamsArchiveVo"/>
+        where archive_id = #{archiveId}
+    </select>
+
+    <select id="selectBamsArchiveByArchiveNumber" parameterType="String" resultMap="BamsArchiveResult">
+        <include refid="selectBamsArchiveVo"/>
+        where archive_number = #{archiveNumber}
+    </select>
+
+    <select id="getMaxSequenceByProject" parameterType="String" resultType="int">
+        SELECT COALESCE(MAX(
+            CAST(SUBSTRING_INDEX(archive_number, '-', -1) AS UNSIGNED)
+        ), 0) as maxSeq
+        FROM bams_archive
+        WHERE project_code = #{projectCode}
+    </select>
+
+    <insert id="insertBamsArchive" parameterType="BamsArchive" useGeneratedKeys="true" keyProperty="archiveId">
+        insert into bams_archive
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="archiveNumber != null and archiveNumber != ''">archive_number,</if>
+            <if test="title != null and title != ''">title,</if>
+            <if test="projectId != null">project_id,</if>
+            <if test="projectCode != null and projectCode != ''">project_code,</if>
+            <if test="projectName != null">project_name,</if>
+            <if test="stage != null and stage != ''">stage,</if>
+            <if test="fileDate != null">file_date,</if>
+            <if test="fileStandard != null and fileStandard != ''">file_standard,</if>
+            <if test="archiveCategory != null and archiveCategory != ''">archive_category,</if>
+            <if test="hasPaperMaterial != null and hasPaperMaterial != ''">has_paper_material,</if>
+            <if test="archivalDate != null">archival_date,</if>
+            <if test="fileType != null">file_type,</if>
+            <if test="fileSize != null">file_size,</if>
+            <if test="description != null">description,</if>
+            <if test="tags != null">tags,</if>
+            <if test="summary != null">summary,</if>
+            <if test="currentVersion != null">current_version,</if>
+            <if test="versionCount != null">version_count,</if>
+            <if test="status != null">status,</if>
+            <if test="delFlag != null">del_flag,</if>
+            <if test="createBy != null">create_by,</if>
+            <if test="createTime != null">create_time,</if>
+            <if test="updateBy != null">update_by,</if>
+            <if test="updateTime != null">update_time,</if>
+            <if test="remark != null">remark,</if>
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="archiveNumber != null and archiveNumber != ''">#{archiveNumber},</if>
+            <if test="title != null and title != ''">#{title},</if>
+            <if test="projectId != null">#{projectId},</if>
+            <if test="projectCode != null and projectCode != ''">#{projectCode},</if>
+            <if test="projectName != null">#{projectName},</if>
+            <if test="stage != null and stage != ''">#{stage},</if>
+            <if test="fileDate != null">#{fileDate},</if>
+            <if test="fileStandard != null and fileStandard != ''">#{fileStandard},</if>
+            <if test="archiveCategory != null and archiveCategory != ''">#{archiveCategory},</if>
+            <if test="hasPaperMaterial != null and hasPaperMaterial != ''">#{hasPaperMaterial},</if>
+            <if test="archivalDate != null">#{archivalDate},</if>
+            <if test="fileType != null">#{fileType},</if>
+            <if test="fileSize != null">#{fileSize},</if>
+            <if test="description != null">#{description},</if>
+            <if test="tags != null">#{tags},</if>
+            <if test="summary != null">#{summary},</if>
+            <if test="currentVersion != null">#{currentVersion},</if>
+            <if test="versionCount != null">#{versionCount},</if>
+            <if test="status != null">#{status},</if>
+            <if test="delFlag != null">#{delFlag},</if>
+            <if test="createBy != null">#{createBy},</if>
+            <if test="createTime != null">#{createTime},</if>
+            <if test="updateBy != null">#{updateBy},</if>
+            <if test="updateTime != null">#{updateTime},</if>
+            <if test="remark != null">#{remark},</if>
+        </trim>
+    </insert>
+
+    <update id="updateBamsArchive" parameterType="BamsArchive">
+        update bams_archive
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="archiveNumber != null and archiveNumber != ''">archive_number = #{archiveNumber},</if>
+            <if test="title != null and title != ''">title = #{title},</if>
+            <if test="fileDate != null">file_date = #{fileDate},</if>
+            <if test="fileStandard != null and fileStandard != ''">file_standard = #{fileStandard},</if>
+            <if test="archiveCategory != null and archiveCategory != ''">archive_category = #{archiveCategory},</if>
+            <if test="hasPaperMaterial != null and hasPaperMaterial != ''">has_paper_material = #{hasPaperMaterial},</if>
+            <if test="description != null">description = #{description},</if>
+            <if test="tags != null">tags = #{tags},</if>
+            <if test="summary != null">summary = #{summary},</if>
+            <if test="status != null">status = #{status},</if>
+            <if test="updateBy != null">update_by = #{updateBy},</if>
+            <if test="updateTime != null">update_time = #{updateTime},</if>
+            <if test="remark != null">remark = #{remark},</if>
+        </trim>
+        where archive_id = #{archiveId}
+    </update>
+
+    <update id="updateDelFlag">
+        update bams_archive
+        set del_flag = #{delFlag}
+        where archive_id = #{archiveId}
+    </update>
+
+    <update id="updateVersionInfo">
+        update bams_archive
+        set current_version = #{currentVersion},
+            version_count = #{versionCount},
+            file_size = #{fileSize}
+        where archive_id = #{archiveId}
+    </update>
+
+    <delete id="deleteBamsArchiveByArchiveId" parameterType="Long">
+        delete from bams_archive where archive_id = #{archiveId}
+    </delete>
+
+    <delete id="deleteBamsArchiveByArchiveIds" parameterType="String">
+        delete from bams_archive where archive_id in
+        <foreach item="archiveId" collection="array" open="(" separator="," close=")">
+            #{archiveId}
+        </foreach>
+    </delete>
+</mapper>

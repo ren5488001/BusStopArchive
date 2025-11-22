@@ -227,15 +227,15 @@ public class BamsStageTemplateServiceImpl implements IBamsStageTemplateService
             return;
         }
 
-        Set<String> stageNames = new HashSet<>();
+        Set<String> stageIds = new HashSet<>();
         for (BamsStageTemplateDetail detail : stages)
         {
-            String stageName = detail.getStageName();
-            if (stageName != null && !stageName.trim().isEmpty())
+            String stageId = detail.getStageId();
+            if (stageId != null && !stageId.trim().isEmpty())
             {
-                if (!stageNames.add(stageName))
+                if (!stageIds.add(stageId))
                 {
-                    throw new ServiceException("阶段名称重复");
+                    throw new ServiceException("阶段ID重复");
                 }
             }
         }

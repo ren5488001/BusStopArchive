@@ -97,6 +97,11 @@ export const errorConfig: RequestConfig = {
   // 响应拦截器
   responseInterceptors: [
     (response) => {
+      // 如果是 blob 类型的响应（文件下载），直接返回
+      if (response.config?.responseType === 'blob') {
+        return response;
+      }
+
       // 拦截响应数据，进行个性化处理
       const { data } = response as unknown as ResponseStructure;
 

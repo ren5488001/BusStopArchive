@@ -1,0 +1,135 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.system.mapper.BamsArchiveAuditLogMapper">
+
+    <resultMap type="BamsArchiveAuditLog" id="BamsArchiveAuditLogResult">
+        <result property="logId"    column="log_id"    />
+        <result property="archiveId"    column="archive_id"    />
+        <result property="versionId"    column="version_id"    />
+        <result property="archiveNumber"    column="archive_number"    />
+        <result property="operationType"    column="operation_type"    />
+        <result property="operationModule"    column="operation_module"    />
+        <result property="operationDesc"    column="operation_desc"    />
+        <result property="fieldName"    column="field_name"    />
+        <result property="oldValue"    column="old_value"    />
+        <result property="newValue"    column="new_value"    />
+        <result property="changeDetail"    column="change_detail"    />
+        <result property="operator"    column="operator"    />
+        <result property="operationTime"    column="operation_time"    />
+        <result property="ipAddress"    column="ip_address"    />
+        <result property="userAgent"    column="user_agent"    />
+    </resultMap>
+
+    <sql id="selectBamsArchiveAuditLogVo">
+        select log_id, archive_id, version_id, archive_number, operation_type, operation_module, operation_desc,
+               field_name, old_value, new_value, change_detail, operator, operation_time, ip_address, user_agent
+        from bams_archive_audit_log
+    </sql>
+
+    <select id="selectBamsArchiveAuditLogList" parameterType="BamsArchiveAuditLog" resultMap="BamsArchiveAuditLogResult">
+        <include refid="selectBamsArchiveAuditLogVo"/>
+        <where>
+            <if test="archiveId != null">
+                AND archive_id = #{archiveId}
+            </if>
+            <if test="versionId != null">
+                AND version_id = #{versionId}
+            </if>
+            <if test="operationType != null and operationType != ''">
+                AND operation_type = #{operationType}
+            </if>
+            <if test="operationModule != null and operationModule != ''">
+                AND operation_module = #{operationModule}
+            </if>
+            <if test="operator != null and operator != ''">
+                AND operator like concat('%', #{operator}, '%')
+            </if>
+            <if test="params.beginOperationTime != null and params.beginOperationTime != '' and params.endOperationTime != null and params.endOperationTime != ''">
+                AND operation_time between #{params.beginOperationTime} and #{params.endOperationTime}
+            </if>
+        </where>
+        ORDER BY operation_time DESC
+    </select>
+
+    <select id="selectBamsArchiveAuditLogByLogId" parameterType="Long" resultMap="BamsArchiveAuditLogResult">
+        <include refid="selectBamsArchiveAuditLogVo"/>
+        where log_id = #{logId}
+    </select>
+
+    <select id="selectLogsByArchiveId" parameterType="Long" resultMap="BamsArchiveAuditLogResult">
+        <include refid="selectBamsArchiveAuditLogVo"/>
+        where archive_id = #{archiveId}
+        ORDER BY operation_time DESC
+    </select>
+
+    <select id="selectLogsByVersionId" parameterType="Long" resultMap="BamsArchiveAuditLogResult">
+        <include refid="selectBamsArchiveAuditLogVo"/>
+        where version_id = #{versionId}
+        ORDER BY operation_time DESC
+    </select>
+
+    <insert id="insertBamsArchiveAuditLog" parameterType="BamsArchiveAuditLog" useGeneratedKeys="true" keyProperty="logId">
+        insert into bams_archive_audit_log
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="archiveId != null">archive_id,</if>
+            <if test="versionId != null">version_id,</if>
+            <if test="archiveNumber != null">archive_number,</if>
+            <if test="operationType != null and operationType != ''">operation_type,</if>
+            <if test="operationModule != null and operationModule != ''">operation_module,</if>
+            <if test="operationDesc != null">operation_desc,</if>
+            <if test="fieldName != null">field_name,</if>
+            <if test="oldValue != null">old_value,</if>
+            <if test="newValue != null">new_value,</if>
+            <if test="changeDetail != null">change_detail,</if>
+            <if test="operator != null">operator,</if>
+            <if test="operationTime != null">operation_time,</if>
+            <if test="ipAddress != null">ip_address,</if>
+            <if test="userAgent != null">user_agent,</if>
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="archiveId != null">#{archiveId},</if>
+            <if test="versionId != null">#{versionId},</if>
+            <if test="archiveNumber != null">#{archiveNumber},</if>
+            <if test="operationType != null and operationType != ''">#{operationType},</if>
+            <if test="operationModule != null and operationModule != ''">#{operationModule},</if>
+            <if test="operationDesc != null">#{operationDesc},</if>
+            <if test="fieldName != null">#{fieldName},</if>
+            <if test="oldValue != null">#{oldValue},</if>
+            <if test="newValue != null">#{newValue},</if>
+            <if test="changeDetail != null">#{changeDetail},</if>
+            <if test="operator != null">#{operator},</if>
+            <if test="operationTime != null">#{operationTime},</if>
+            <if test="ipAddress != null">#{ipAddress},</if>
+            <if test="userAgent != null">#{userAgent},</if>
+        </trim>
+    </insert>
+
+    <insert id="batchInsertAuditLog" parameterType="java.util.List">
+        insert into bams_archive_audit_log
+        (archive_id, version_id, archive_number, operation_type, operation_module, operation_desc,
+         field_name, old_value, new_value, change_detail, operator, operation_time, ip_address, user_agent)
+        values
+        <foreach collection="list" item="item" separator=",">
+            (#{item.archiveId}, #{item.versionId}, #{item.archiveNumber}, #{item.operationType}, #{item.operationModule}, #{item.operationDesc},
+             #{item.fieldName}, #{item.oldValue}, #{item.newValue}, #{item.changeDetail}, #{item.operator},
+             #{item.operationTime}, #{item.ipAddress}, #{item.userAgent})
+        </foreach>
+    </insert>
+
+    <delete id="deleteBamsArchiveAuditLogByLogId" parameterType="Long">
+        delete from bams_archive_audit_log where log_id = #{logId}
+    </delete>
+
+    <delete id="deleteBamsArchiveAuditLogByLogIds" parameterType="String">
+        delete from bams_archive_audit_log where log_id in
+        <foreach item="logId" collection="array" open="(" separator="," close=")">
+            #{logId}
+        </foreach>
+    </delete>
+
+    <delete id="deleteByArchiveId" parameterType="Long">
+        delete from bams_archive_audit_log where archive_id = #{archiveId}
+    </delete>
+</mapper>

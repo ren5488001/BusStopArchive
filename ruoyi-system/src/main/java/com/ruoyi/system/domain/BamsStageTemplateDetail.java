@@ -20,14 +20,17 @@ public class BamsStageTemplateDetail
 {
     private static final long serialVersionUID = 1L;
 
-    /** 明细ID */
-    private Long detailId;
+    /** 主键ID */
+    private Long id;
 
     /** 模板ID */
     private Long templateId;
 
-    /** 阶段名称 */
-    private String stageName;
+    /** 阶段ID（字典键值：0,1,2,3） */
+    private String stageId;
+
+    /** 阶段显示名称（中文：立项,设计,施工,验收） */
+    private String stageDisplayName;
 
     /** 阶段顺序 */
     private Integer stageOrder;
@@ -46,14 +49,14 @@ public class BamsStageTemplateDetail
     /** 标准文件配置列表（前端传递，不存数据库） */
     private List<String> requiredFileList;
 
-    public Long getDetailId()
+    public Long getId()
     {
-        return detailId;
+        return id;
     }
 
-    public void setDetailId(Long detailId)
+    public void setId(Long id)
     {
-        this.detailId = detailId;
+        this.id = id;
     }
 
     public Long getTemplateId()
@@ -66,16 +69,26 @@ public class BamsStageTemplateDetail
         this.templateId = templateId;
     }
 
-    @NotBlank(message = "阶段名称不能为空")
-    @Size(min = 0, max = 100, message = "阶段名称不能超过100个字符")
-    public String getStageName()
+    @NotBlank(message = "阶段ID不能为空")
+    @Size(min = 0, max = 10, message = "阶段ID不能超过10个字符")
+    public String getStageId()
     {
-        return stageName;
+        return stageId;
     }
 
-    public void setStageName(String stageName)
+    public void setStageId(String stageId)
     {
-        this.stageName = stageName;
+        this.stageId = stageId;
+    }
+
+    public String getStageDisplayName()
+    {
+        return stageDisplayName;
+    }
+
+    public void setStageDisplayName(String stageDisplayName)
+    {
+        this.stageDisplayName = stageDisplayName;
     }
 
     @NotNull(message = "阶段顺序不能为空")
@@ -144,9 +157,10 @@ public class BamsStageTemplateDetail
     public String toString()
     {
         return new ToStringBuilder(this, ToStringStyle.MULTI_LINE_STYLE)
-            .append("detailId", getDetailId())
+            .append("id", getId())
             .append("templateId", getTemplateId())
-            .append("stageName", getStageName())
+            .append("stageId", getStageId())
+            .append("stageDisplayName", getStageDisplayName())
             .append("stageOrder", getStageOrder())
             .append("requiredFiles", getRequiredFiles())
             .append("requiredFileList", getRequiredFileList())

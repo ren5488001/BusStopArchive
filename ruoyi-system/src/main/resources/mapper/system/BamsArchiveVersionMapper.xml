@@ -1,0 +1,128 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.system.mapper.BamsArchiveVersionMapper">
+
+    <resultMap type="BamsArchiveVersion" id="BamsArchiveVersionResult">
+        <result property="versionId"    column="version_id"    />
+        <result property="archiveId"    column="archive_id"    />
+        <result property="versionNumber"    column="version_number"    />
+        <result property="fileName"    column="file_name"    />
+        <result property="filePath"    column="file_path"    />
+        <result property="fileType"    column="file_type"    />
+        <result property="fileSize"    column="file_size"    />
+        <result property="fileHash"    column="file_hash"    />
+        <result property="isCurrent"    column="is_current"    />
+        <result property="versionRemark"    column="version_remark"    />
+        <result property="uploadBy"    column="upload_by"    />
+        <result property="uploadTime"    column="upload_time"    />
+    </resultMap>
+
+    <sql id="selectBamsArchiveVersionVo">
+        select version_id, archive_id, version_number, file_name, file_path, file_type,
+               file_size, file_hash, is_current, version_remark, upload_by, upload_time
+        from bams_archive_version
+    </sql>
+
+    <select id="selectBamsArchiveVersionList" parameterType="BamsArchiveVersion" resultMap="BamsArchiveVersionResult">
+        <include refid="selectBamsArchiveVersionVo"/>
+        <where>
+            <if test="archiveId != null">
+                AND archive_id = #{archiveId}
+            </if>
+            <if test="versionNumber != null and versionNumber != ''">
+                AND version_number = #{versionNumber}
+            </if>
+            <if test="isCurrent != null and isCurrent != ''">
+                AND is_current = #{isCurrent}
+            </if>
+        </where>
+        ORDER BY upload_time DESC
+    </select>
+
+    <select id="selectBamsArchiveVersionByVersionId" parameterType="Long" resultMap="BamsArchiveVersionResult">
+        <include refid="selectBamsArchiveVersionVo"/>
+        where version_id = #{versionId}
+    </select>
+
+    <select id="selectVersionsByArchiveId" parameterType="Long" resultMap="BamsArchiveVersionResult">
+        <include refid="selectBamsArchiveVersionVo"/>
+        where archive_id = #{archiveId}
+        ORDER BY upload_time DESC
+    </select>
+
+    <select id="selectCurrentVersion" parameterType="Long" resultMap="BamsArchiveVersionResult">
+        <include refid="selectBamsArchiveVersionVo"/>
+        where archive_id = #{archiveId} and is_current = '1'
+    </select>
+
+    <insert id="insertBamsArchiveVersion" parameterType="BamsArchiveVersion" useGeneratedKeys="true" keyProperty="versionId">
+        insert into bams_archive_version
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="archiveId != null">archive_id,</if>
+            <if test="versionNumber != null and versionNumber != ''">version_number,</if>
+            <if test="fileName != null and fileName != ''">file_name,</if>
+            <if test="filePath != null and filePath != ''">file_path,</if>
+            <if test="fileType != null">file_type,</if>
+            <if test="fileSize != null">file_size,</if>
+            <if test="fileHash != null">file_hash,</if>
+            <if test="isCurrent != null">is_current,</if>
+            <if test="versionRemark != null">version_remark,</if>
+            <if test="uploadBy != null">upload_by,</if>
+            <if test="uploadTime != null">upload_time,</if>
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="archiveId != null">#{archiveId},</if>
+            <if test="versionNumber != null and versionNumber != ''">#{versionNumber},</if>
+            <if test="fileName != null and fileName != ''">#{fileName},</if>
+            <if test="filePath != null and filePath != ''">#{filePath},</if>
+            <if test="fileType != null">#{fileType},</if>
+            <if test="fileSize != null">#{fileSize},</if>
+            <if test="fileHash != null">#{fileHash},</if>
+            <if test="isCurrent != null">#{isCurrent},</if>
+            <if test="versionRemark != null">#{versionRemark},</if>
+            <if test="uploadBy != null">#{uploadBy},</if>
+            <if test="uploadTime != null">#{uploadTime},</if>
+        </trim>
+    </insert>
+
+    <update id="updateBamsArchiveVersion" parameterType="BamsArchiveVersion">
+        update bams_archive_version
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="versionRemark != null">version_remark = #{versionRemark},</if>
+            <if test="isCurrent != null">is_current = #{isCurrent},</if>
+        </trim>
+        where version_id = #{versionId}
+    </update>
+
+    <update id="updateCurrentVersion">
+        update bams_archive_version
+        set is_current = CASE
+            WHEN version_id = #{versionId} THEN '1'
+            ELSE '0'
+        END
+        where archive_id = #{archiveId}
+    </update>
+
+    <update id="cancelCurrentVersion">
+        update bams_archive_version
+        set is_current = '0'
+        where archive_id = #{archiveId} and is_current = '1'
+    </update>
+
+    <delete id="deleteBamsArchiveVersionByVersionId" parameterType="Long">
+        delete from bams_archive_version where version_id = #{versionId}
+    </delete>
+
+    <delete id="deleteBamsArchiveVersionByVersionIds" parameterType="String">
+        delete from bams_archive_version where version_id in
+        <foreach item="versionId" collection="array" open="(" separator="," close=")">
+            #{versionId}
+        </foreach>
+    </delete>
+
+    <delete id="deleteByArchiveId" parameterType="Long">
+        delete from bams_archive_version where archive_id = #{archiveId}
+    </delete>
+</mapper>

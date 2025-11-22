@@ -1,0 +1,124 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.system.mapper.BamsTagDictionaryMapper">
+
+    <resultMap type="BamsTagDictionary" id="BamsTagDictionaryResult">
+        <result property="tagId"    column="tag_id"    />
+        <result property="tagName"    column="tag_name"    />
+        <result property="usageCount"    column="usage_count"    />
+        <result property="status"    column="status"    />
+        <result property="createBy"    column="create_by"    />
+        <result property="createTime"    column="create_time"    />
+    </resultMap>
+
+    <sql id="selectBamsTagDictionaryVo">
+        select tag_id, tag_name, usage_count, status, create_by, create_time
+        from bams_tag_dictionary
+    </sql>
+
+    <select id="selectBamsTagDictionaryList" parameterType="BamsTagDictionary" resultMap="BamsTagDictionaryResult">
+        <include refid="selectBamsTagDictionaryVo"/>
+        <where>
+            <if test="tagName != null and tagName != ''">
+                AND tag_name like concat('%', #{tagName}, '%')
+            </if>
+            <if test="status != null and status != ''">
+                AND status = #{status}
+            </if>
+        </where>
+        ORDER BY usage_count DESC, create_time DESC
+    </select>
+
+    <select id="selectBamsTagDictionaryByTagId" parameterType="Long" resultMap="BamsTagDictionaryResult">
+        <include refid="selectBamsTagDictionaryVo"/>
+        where tag_id = #{tagId}
+    </select>
+
+    <select id="selectBamsTagDictionaryByTagName" parameterType="String" resultMap="BamsTagDictionaryResult">
+        <include refid="selectBamsTagDictionaryVo"/>
+        where tag_name = #{tagName}
+    </select>
+
+    <select id="selectEnabledTags" resultMap="BamsTagDictionaryResult">
+        <include refid="selectBamsTagDictionaryVo"/>
+        where status = '0'
+        ORDER BY usage_count DESC, create_time DESC
+    </select>
+
+    <insert id="insertBamsTagDictionary" parameterType="BamsTagDictionary" useGeneratedKeys="true" keyProperty="tagId">
+        insert into bams_tag_dictionary
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="tagName != null and tagName != ''">tag_name,</if>
+            <if test="usageCount != null">usage_count,</if>
+            <if test="status != null">status,</if>
+            <if test="createBy != null">create_by,</if>
+            <if test="createTime != null">create_time,</if>
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="tagName != null and tagName != ''">#{tagName},</if>
+            <if test="usageCount != null">#{usageCount},</if>
+            <if test="status != null">#{status},</if>
+            <if test="createBy != null">#{createBy},</if>
+            <if test="createTime != null">#{createTime},</if>
+        </trim>
+    </insert>
+
+    <update id="updateBamsTagDictionary" parameterType="BamsTagDictionary">
+        update bams_tag_dictionary
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="tagName != null and tagName != ''">tag_name = #{tagName},</if>
+            <if test="usageCount != null">usage_count = #{usageCount},</if>
+            <if test="status != null">status = #{status},</if>
+        </trim>
+        where tag_id = #{tagId}
+    </update>
+
+    <update id="incrementUsageCount">
+        update bams_tag_dictionary
+        set usage_count = usage_count + 1
+        where tag_id = #{tagId}
+    </update>
+
+    <update id="decrementUsageCount">
+        update bams_tag_dictionary
+        set usage_count = CASE
+            WHEN usage_count > 0 THEN usage_count - 1
+            ELSE 0
+        END
+        where tag_id = #{tagId}
+    </update>
+
+    <update id="batchIncrementUsageCount">
+        update bams_tag_dictionary
+        set usage_count = usage_count + 1
+        where tag_id in
+        <foreach item="tagId" collection="tagIds" open="(" separator="," close=")">
+            #{tagId}
+        </foreach>
+    </update>
+
+    <update id="batchDecrementUsageCount">
+        update bams_tag_dictionary
+        set usage_count = CASE
+            WHEN usage_count > 0 THEN usage_count - 1
+            ELSE 0
+        END
+        where tag_id in
+        <foreach item="tagId" collection="tagIds" open="(" separator="," close=")">
+            #{tagId}
+        </foreach>
+    </update>
+
+    <delete id="deleteBamsTagDictionaryByTagId" parameterType="Long">
+        delete from bams_tag_dictionary where tag_id = #{tagId}
+    </delete>
+
+    <delete id="deleteBamsTagDictionaryByTagIds" parameterType="String">
+        delete from bams_tag_dictionary where tag_id in
+        <foreach item="tagId" collection="array" open="(" separator="," close=")">
+            #{tagId}
+        </foreach>
+    </delete>
+</mapper>

@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { PageContainer } from '@ant-design/pro-components';
 import {
   Card,
@@ -14,6 +14,7 @@ import {
   Checkbox,
   Divider,
   message,
+  Modal,
 } from 'antd';
 import {
   SearchOutlined,
@@ -23,91 +24,53 @@ import {
   EditOutlined,
   DeleteOutlined,
   UndoOutlined,
+  ExclamationCircleOutlined,
 } from '@ant-design/icons';
 import type { ColumnsType } from 'antd/es/table';
 import ArchiveDetail from './components/ArchiveDetail';
+import {
+  getArchiveList,
+  deleteArchive,
+  restoreArchive,
+  permanentDeleteArchive,
+  downloadVersion,
+  getArchiveVersions,
+  type ArchiveType,
+  type ArchiveListParams,
+} from '@/services/bams/archive';
+import { getProjectList, type ProjectType } from '@/services/bams/project';
+import { getDictSelectOption } from '@/services/system/dict';
+import dayjs from 'dayjs';
 
 const { RangePicker } = DatePicker;
 const { Option } = Select;
-
-// Mock数据
-const mockArchives = [
-  {
-    id: 1,
-    archiveNumber: 'PRJ001-立项-001',
-    title: '中山路公交站台建设项目立项申请书',
-    projectName: '中山路公交站台建设项目',
-    projectCode: 'PRJ001',
-    stage: '立项',
-    version: 'V2.0',
-    retentionPeriod: '30年',
-    uploadDate: '2024-01-15',
-    uploader: '张三',
-    description: '中山路公交站台建设项目的立项申请文件，包含项目背景、建设必要性分析、投资估算等内容。',
-    content: '项目立项申请书内容，包含项目背景分析、建设必要性、技术方案、投资估算等详细信息...',
-    isDeleted: false,
-    status: '已归档',
-  },
-  {
-    id: 2,
-    archiveNumber: 'PRJ001-设计-001',
-    title: '中山路公交站台施工图纸',
-    projectName: '中山路公交站台建设项目',
-    projectCode: 'PRJ001',
-    stage: '设计',
-    version: 'V3.0',
-    retentionPeriod: '永久',
-    uploadDate: '2024-01-20',
-    uploader: '李四',
-    description: '中山路公交站台的详细施工图纸，包含结构设计、材料规格、施工工艺等技术文档。',
-    content: '施工图纸详细内容，包含站台结构设计、钢结构连接方式、防腐处理工艺等技术规范...',
-    isDeleted: false,
-    status: '已归档',
-  },
-  {
-    id: 3,
-    archiveNumber: 'PRJ002-立项-001',
-    title: '解放路公交站台项目可行性研究报告',
-    projectName: '解放路公交站台建设项目',
-    projectCode: 'PRJ002',
-    stage: '立项',
-    version: 'V1.0',
-    retentionPeriod: '30年',
-    uploadDate: '2024-01-18',
-    uploader: '王五',
-    description: '解放路公交站台建设项目的可行性研究报告，分析项目的技术可行性、经济合理性等。',
-    content: '可行性研究报告内容，包含市场分析、技术方案比较、经济效益分析、风险评估等...',
-    isDeleted: false,
-    status: '已归档',
-  },
-  {
-    id: 10,
-    archiveNumber: 'PRJ001-施工-002',
-    title: '中山路公交站台材料采购清单',
-    projectName: '中山路公交站台建设项目',
-    projectCode: 'PRJ001',
-    stage: '施工',
-    version: 'V2.0',
-    retentionPeriod: '10年',
-    uploadDate: '2024-02-05',
-    uploader: '孙十二',
-    description: '中山路公交站台建设项目的材料采购清单，详细记录各类建材的规格、数量、价格等信息。',
-    content: '材料采购清单详细内容，包含钢材、混凝土、装饰材料等各类物资的规格型号、采购数量、单价等...',
-    isDeleted: true,
-    status: '已归档',
-  },
-];
+const { confirm } = Modal;
 
 const ArchiveSearch: React.FC = () => {
   const [searchKeyword, setSearchKeyword] = useState('');
   const [showAdvancedFilter, setShowAdvancedFilter] = useState(false);
   const [showDeleted, setShowDeleted] = useState(false);
   const [selectedArchive, setSelectedArchive] = useState<any>(null);
-  const [filters, setFilters] = useState({
-    projectCode: undefined,
-    stage: undefined,
-    dateRange: null,
+  const [loading, setLoading] = useState(false);
+  const [archiveList, setArchiveList] = useState<ArchiveType[]>([]);
+  const [total, setTotal] = useState(0);
+  const [pagination, setPagination] = useState({
+    current: 1,
+    pageSize: 10,
   });
+  const [filters, setFilters] = useState({
+    projectId: undefined as number | undefined,
+    stage: undefined,
+    fileStandard: undefined,
+    archiveCategory: undefined,
+    dateRange: null as any,
+  });
+
+  // 下拉选项数据
+  const [projects, setProjects] = useState<ProjectType[]>([]);
+  const [stageOptions, setStageOptions] = useState<any[]>([]);
+  const [fileStandardOptions, setFileStandardOptions] = useState<any[]>([]);
+  const [archiveCategoryOptions, setArchiveCategoryOptions] = useState<any[]>([]);
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -132,39 +95,187 @@ const ArchiveSearch: React.FC = () => {
     return colorMap[stage] || 'default';
   };
 
-  const filteredArchives = mockArchives.filter((archive) => {
-    if (showDeleted && !archive.isDeleted) return false;
-    if (!showDeleted && archive.isDeleted) return false;
-
-    if (searchKeyword) {
-      const keyword = searchKeyword.toLowerCase();
-      return (
-        archive.title.toLowerCase().includes(keyword) ||
-        archive.archiveNumber.toLowerCase().includes(keyword) ||
-        archive.content?.toLowerCase().includes(keyword)
-      );
+  // 加载项目列表
+  const loadProjects = async () => {
+    try {
+      const response = await getProjectList({ pageNum: 1, pageSize: 1000 });
+      if (response.code === 200 && response.rows) {
+        setProjects(response.rows);
+      }
+    } catch (error) {
+      console.error('加载项目列表失败:', error);
     }
-    return true;
-  });
+  };
 
-  const handleViewDetail = (record: any) => {
+  // 加载字典数据
+  const loadDictionaries = async () => {
+    try {
+      // 加载建设阶段字典
+      const stageResp = await getDictSelectOption('bams_project_phase');
+      setStageOptions(stageResp || []);
+
+      // 加载文件标准字典
+      const fileStandardResp = await getDictSelectOption('bams_file_conf');
+      setFileStandardOptions(fileStandardResp || []);
+
+      // 加载档案分类字典
+      const archiveCategoryResp = await getDictSelectOption('bams_archives_classification');
+      setArchiveCategoryOptions(archiveCategoryResp || []);
+    } catch (error) {
+      console.error('加载字典数据失败:', error);
+    }
+  };
+
+  // 首次加载数据
+  useEffect(() => {
+    loadProjects();
+    loadDictionaries();
+  }, []);
+
+  // 加载档案列表
+  const loadArchiveList = async () => {
+    setLoading(true);
+    try {
+      const params: ArchiveListParams = {
+        pageNum: pagination.current,
+        pageSize: pagination.pageSize,
+        title: searchKeyword || undefined,
+        projectId: filters.projectId,
+        stage: filters.stage,
+        fileStandard: filters.fileStandard,
+        archiveCategory: filters.archiveCategory,
+        delFlag: showDeleted ? '1' : '0',
+      };
+
+      if (filters.dateRange && filters.dateRange.length === 2) {
+        params.params = {
+          beginFileDate: filters.dateRange[0].format('YYYY-MM-DD'),
+          endFileDate: filters.dateRange[1].format('YYYY-MM-DD'),
+        };
+      }
+
+      const response = await getArchiveList(params);
+      if (response.code === 200) {
+        setArchiveList(response.rows || []);
+        setTotal(response.total || 0);
+      } else {
+        message.error(response.msg || '加载档案列表失败');
+      }
+    } catch (error) {
+      message.error('加载档案列表失败');
+      console.error(error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // 首次加载和筛选条件变化时重新加载
+  useEffect(() => {
+    loadArchiveList();
+  }, [pagination.current, pagination.pageSize, showDeleted]);
+
+  const handleViewDetail = (record: ArchiveType) => {
     setSelectedArchive(record);
   };
 
   const handleBackToList = () => {
     setSelectedArchive(null);
+    loadArchiveList(); // 返回时刷新列表
   };
 
-  const handleDelete = (record: any) => {
-    message.success('档案已删除');
+  const handleDelete = (record: ArchiveType) => {
+    confirm({
+      title: '确认删除',
+      icon: <ExclamationCircleOutlined />,
+      content: `确定要删除档案"${record.title}"吗？删除后可在回收站中恢复。`,
+      onOk: async () => {
+        try {
+          const response = await deleteArchive([record.archiveId!]);
+          if (response.code === 200) {
+            message.success('档案已移至回收站');
+            loadArchiveList();
+          } else {
+            message.error(response.msg || '删除失败');
+          }
+        } catch (error) {
+          message.error('删除失败');
+          console.error(error);
+        }
+      },
+    });
   };
 
-  const handleRestore = (record: any) => {
-    message.success('档案已恢复');
+  const handleRestore = (record: ArchiveType) => {
+    confirm({
+      title: '确认恢复',
+      icon: <ExclamationCircleOutlined />,
+      content: `确定要恢复档案"${record.title}"吗？`,
+      onOk: async () => {
+        try {
+          const response = await restoreArchive([record.archiveId!]);
+          if (response.code === 200) {
+            message.success('档案已恢复');
+            loadArchiveList();
+          } else {
+            message.error(response.msg || '恢复失败');
+          }
+        } catch (error) {
+          message.error('恢复失败');
+          console.error(error);
+        }
+      },
+    });
   };
 
-  const handleDownload = (record: any) => {
-    message.success(`正在下载：${record.title}`);
+  const handlePermanentDelete = (record: ArchiveType) => {
+    confirm({
+      title: '确认永久删除',
+      icon: <ExclamationCircleOutlined />,
+      content: `确定要永久删除档案"${record.title}"吗？此操作无法恢复！`,
+      okText: '确认删除',
+      okType: 'danger',
+      onOk: async () => {
+        try {
+          const response = await permanentDeleteArchive([record.archiveId!]);
+          if (response.code === 200) {
+            message.success('档案已永久删除');
+            loadArchiveList();
+          } else {
+            message.error(response.msg || '删除失败');
+          }
+        } catch (error) {
+          message.error('删除失败');
+          console.error(error);
+        }
+      },
+    });
+  };
+
+  const handleDownload = async (record: ArchiveType) => {
+    try {
+      // 先获取档案的版本列表
+      const versionsResponse = await getArchiveVersions(record.archiveId!);
+      if (versionsResponse.code === 200 && versionsResponse.data && versionsResponse.data.length > 0) {
+        // 找到当前版本
+        const currentVersion = versionsResponse.data.find((v: any) => v.isCurrent === '1');
+        if (currentVersion) {
+          await downloadVersion(currentVersion.versionId!, currentVersion.fileName);
+          message.success(`正在下载：${record.title}`);
+        } else {
+          message.error('未找到当前版本文件');
+        }
+      } else {
+        message.error('该档案暂无文件');
+      }
+    } catch (error) {
+      message.error('下载失败');
+      console.error(error);
+    }
+  };
+
+  const handleSearch = () => {
+    setPagination({ ...pagination, current: 1 });
+    loadArchiveList();
   };
 
   const columns: ColumnsType<any> = [
@@ -179,7 +290,7 @@ const ArchiveSearch: React.FC = () => {
       title: '档案题名',
       dataIndex: 'title',
       key: 'title',
-      width: 300,
+      width: 250,
       render: (text, record) => (
         <a onClick={() => handleViewDetail(record)} style={{ color: '#1890ff' }}>
           {text}
@@ -190,7 +301,7 @@ const ArchiveSearch: React.FC = () => {
       title: '所属项目',
       dataIndex: 'projectName',
       key: 'projectName',
-      width: 200,
+      width: 180,
       ellipsis: true,
     },
     {
@@ -198,19 +309,57 @@ const ArchiveSearch: React.FC = () => {
       dataIndex: 'stage',
       key: 'stage',
       width: 100,
-      render: (stage) => <Tag color={getStageColor(stage)}>{stage}</Tag>,
+      render: (stage) => {
+        return stage ? <Tag color={getStageColor(stage)}>{stage}</Tag> : '-';
+      },
+    },
+    {
+      title: '文件标准',
+      dataIndex: 'fileStandard',
+      key: 'fileStandard',
+      width: 120,
+      render: (text) => {
+        const option = fileStandardOptions.find(opt => opt.value === text);
+        return option ? option.label : text || '-';
+      },
+    },
+    {
+      title: '档案分类',
+      dataIndex: 'archiveCategory',
+      key: 'archiveCategory',
+      width: 120,
+      render: (text) => {
+        const option = archiveCategoryOptions.find(opt => opt.value === text);
+        return option ? option.label : text || '-';
+      },
+    },
+    {
+      title: '纸质材料',
+      dataIndex: 'hasPaperMaterial',
+      key: 'hasPaperMaterial',
+      width: 100,
+      align: 'center',
+      render: (text) => {
+        if (text === '1') {
+          return <Tag color="green">有</Tag>;
+        } else if (text === '0') {
+          return <Tag color="default">无</Tag>;
+        }
+        return '-';
+      },
     },
     {
       title: '文件版本',
-      dataIndex: 'version',
-      key: 'version',
+      dataIndex: 'currentVersion',
+      key: 'currentVersion',
       width: 100,
     },
     {
-      title: '上传日期',
-      dataIndex: 'uploadDate',
-      key: 'uploadDate',
-      width: 120,
+      title: '创建时间',
+      dataIndex: 'createTime',
+      key: 'createTime',
+      width: 160,
+      render: (text) => text ? dayjs(text).format('YYYY-MM-DD HH:mm') : '-',
     },
     {
       title: '操作',
@@ -219,7 +368,7 @@ const ArchiveSearch: React.FC = () => {
       fixed: 'right',
       render: (_, record) => (
         <Space size="small">
-          {!record.isDeleted ? (
+          {record.delFlag !== '1' ? (
             <>
               <Button
                 type="link"
@@ -236,9 +385,6 @@ const ArchiveSearch: React.FC = () => {
                 onClick={() => handleDownload(record)}
               >
                 下载
-              </Button>
-              <Button type="link" size="small" icon={<EditOutlined />}>
-                编辑
               </Button>
               <Button
                 type="link"
@@ -265,7 +411,7 @@ const ArchiveSearch: React.FC = () => {
                 size="small"
                 danger
                 icon={<DeleteOutlined />}
-                onClick={() => handleDelete(record)}
+                onClick={() => handlePermanentDelete(record)}
               >
                 彻底删除
               </Button>
@@ -293,12 +439,18 @@ const ArchiveSearch: React.FC = () => {
         <Space direction="vertical" size="middle" style={{ display: 'flex' }}>
           {/* 全文搜索框 */}
           <Input
-            placeholder="输入关键词搜索档案内容、题名或档号..."
+            placeholder="输入关键词搜索档案题名或档号..."
             prefix={<SearchOutlined />}
             value={searchKeyword}
             onChange={(e) => setSearchKeyword(e.target.value)}
+            onPressEnter={handleSearch}
             size="large"
             allowClear
+            addonAfter={
+              <Button type="primary" icon={<SearchOutlined />} onClick={handleSearch}>
+                搜索
+              </Button>
+            }
           />
 
           {/* 高级筛选和回收站切换 */}
@@ -324,24 +476,30 @@ const ArchiveSearch: React.FC = () => {
           {/* 高级筛选面板 */}
           {showAdvancedFilter && (
             <Card size="small" style={{ backgroundColor: '#fafafa' }}>
-              <Row gutter={16}>
-                <Col span={8}>
+              <Row gutter={[16, 16]}>
+                <Col span={6}>
                   <div>
-                    <div style={{ marginBottom: 8, fontWeight: 500 }}>项目编号</div>
+                    <div style={{ marginBottom: 8, fontWeight: 500 }}>项目名称</div>
                     <Select
                       placeholder="全部项目"
                       style={{ width: '100%' }}
-                      value={filters.projectCode}
-                      onChange={(value) => setFilters({ ...filters, projectCode: value })}
+                      value={filters.projectId}
+                      onChange={(value) => setFilters({ ...filters, projectId: value })}
                       allowClear
+                      showSearch
+                      filterOption={(input, option) =>
+                        (option?.children as string).toLowerCase().includes(input.toLowerCase())
+                      }
                     >
-                      <Option value="PRJ001">PRJ001 - 中山路公交站台</Option>
-                      <Option value="PRJ002">PRJ002 - 解放路公交站台</Option>
-                      <Option value="PRJ003">PRJ003 - 人民路公交站台</Option>
+                      {projects.map((project) => (
+                        <Option key={project.projectId} value={project.projectId}>
+                          {project.projectName}
+                        </Option>
+                      ))}
                     </Select>
                   </div>
                 </Col>
-                <Col span={8}>
+                <Col span={6}>
                   <div>
                     <div style={{ marginBottom: 8, fontWeight: 500 }}>建设阶段</div>
                     <Select
@@ -351,14 +509,51 @@ const ArchiveSearch: React.FC = () => {
                       onChange={(value) => setFilters({ ...filters, stage: value })}
                       allowClear
                     >
-                      <Option value="立项">立项</Option>
-                      <Option value="设计">设计</Option>
-                      <Option value="施工">施工</Option>
-                      <Option value="验收">验收</Option>
+                      {stageOptions.map((option) => (
+                        <Option key={option.value} value={option.value}>
+                          {option.label}
+                        </Option>
+                      ))}
                     </Select>
                   </div>
                 </Col>
-                <Col span={8}>
+                <Col span={6}>
+                  <div>
+                    <div style={{ marginBottom: 8, fontWeight: 500 }}>文件标准</div>
+                    <Select
+                      placeholder="全部标准"
+                      style={{ width: '100%' }}
+                      value={filters.fileStandard}
+                      onChange={(value) => setFilters({ ...filters, fileStandard: value })}
+                      allowClear
+                    >
+                      {fileStandardOptions.map((option) => (
+                        <Option key={option.value} value={option.value}>
+                          {option.label}
+                        </Option>
+                      ))}
+                    </Select>
+                  </div>
+                </Col>
+                <Col span={6}>
+                  <div>
+                    <div style={{ marginBottom: 8, fontWeight: 500 }}>档案分类</div>
+                    <Select
+                      placeholder="全部分类"
+                      style={{ width: '100%' }}
+                      value={filters.archiveCategory}
+                      onChange={(value) => setFilters({ ...filters, archiveCategory: value })}
+                      allowClear
+                    >
+                      {archiveCategoryOptions.map((option) => (
+                        <Option key={option.value} value={option.value}>
+                          {option.label}
+                        </Option>
+                      ))}
+                    </Select>
+                  </div>
+                </Col>
+                <Col span={12}>
                   <div>
                     <div style={{ marginBottom: 8, fontWeight: 500 }}>文件日期范围</div>
                     <RangePicker
@@ -378,7 +573,7 @@ const ArchiveSearch: React.FC = () => {
           <Row justify="space-between">
             <Col>
               <span>
-                共找到 <span style={{ color: '#1890ff', fontWeight: 500 }}>{filteredArchives.length}</span> 条档案记录
+                共找到 <span style={{ color: '#1890ff', fontWeight: 500 }}>{total}</span> 条档案记录
               </span>
             </Col>
             <Col>
@@ -389,16 +584,22 @@ const ArchiveSearch: React.FC = () => {
           {/* 档案列表 */}
           <Table
             columns={columns}
-            dataSource={filteredArchives}
-            rowKey="id"
-            scroll={{ x: 1200 }}
+            dataSource={archiveList}
+            rowKey="archiveId"
+            loading={loading}
+            scroll={{ x: 1600 }}
             pagination={{
+              current: pagination.current,
+              pageSize: pagination.pageSize,
+              total: total,
               showSizeChanger: true,
               showQuickJumper: true,
               showTotal: (total) => `共 ${total} 条记录`,
-              defaultPageSize: 10,
+              onChange: (page, pageSize) => {
+                setPagination({ current: page, pageSize: pageSize || 10 });
+              },
             }}
-            rowClassName={(record) => (record.isDeleted ? 'row-deleted' : '')}
+            rowClassName={(record) => (record.delFlag === '1' ? 'row-deleted' : '')}
           />
         </Space>
       </Card>
