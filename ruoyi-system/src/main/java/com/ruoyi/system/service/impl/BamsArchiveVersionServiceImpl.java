@@ -213,8 +213,10 @@ public class BamsArchiveVersionServiceImpl implements IBamsArchiveVersionService
         archiveMapper.updateVersionInfo(archiveId, versionNumber, versionCount, file.getSize());
 
         // 记录审计日志
+        String uploadDesc = String.format("上传新版本【%s】，文件名：%s，大小：%s", 
+                versionNumber, fileName, formatFileSize(file.getSize()));
         createAuditLog(archiveId, version.getVersionId(), "VERSION_UPLOAD", "版本管理",
-                "上传新版本：" + versionNumber);
+                uploadDesc);
 
         return version;
     }
@@ -241,8 +243,10 @@ public class BamsArchiveVersionServiceImpl implements IBamsArchiveVersionService
         archiveMapper.updateVersionInfo(archiveId, version.getVersionNumber(), null, version.getFileSize());
 
         // 记录审计日志
+        String switchDesc = String.format("切换当前版本为【%s】，文件：%s", 
+                version.getVersionNumber(), version.getFileName());
         createAuditLog(archiveId, versionId, "VERSION_SWITCH", "版本管理",
-                "切换当前版本为：" + version.getVersionNumber());
+                switchDesc);
 
         return result;
     }
@@ -293,8 +297,10 @@ public class BamsArchiveVersionServiceImpl implements IBamsArchiveVersionService
         deletePhysicalFile(version.getFilePath());
 
         // 记录审计日志
+        String deleteDesc = String.format("删除版本【%s】，文件：%s", 
+                version.getVersionNumber(), version.getFileName());
         createAuditLog(version.getArchiveId(), versionId, "VERSION_DELETE", "版本管理",
-                "删除版本：" + version.getVersionNumber());
+                deleteDesc);
 
         // 删除版本记录
         int result = versionMapper.deleteBamsArchiveVersionByVersionId(versionId);
@@ -336,8 +342,10 @@ public class BamsArchiveVersionServiceImpl implements IBamsArchiveVersionService
         }
 
         // 记录审计日志
+        String downloadDesc = String.format("下载文件【%s】（版本：%s）", 
+                version.getFileName(), version.getVersionNumber());
         createAuditLog(version.getArchiveId(), versionId, "DOWNLOAD", "文件操作",
-                "下载版本文件：" + version.getVersionNumber());
+                downloadDesc);
 
         return version.getFilePath();
     }
@@ -484,6 +492,26 @@ public class BamsArchiveVersionServiceImpl implements IBamsArchiveVersionService
         log.setOperationTime(new Date());
         log.setIpAddress(IpUtils.getIpAddr());
         auditLogMapper.insertBamsArchiveAuditLog(log);
+    }
+
+    /**
+     * 格式化文件大小
+     */
+    private String formatFileSize(Long size) {
+        if (size == null || size == 0) {
+            return "0 B";
+        }
+        
+        final String[] units = {"B", "KB", "MB", "GB", "TB"};
+        int unitIndex = 0;
+        double fileSize = size.doubleValue();
+        
+        while (fileSize >= 1024 && unitIndex < units.length - 1) {
+            fileSize /= 1024;
+            unitIndex++;
+        }
+        
+        return String.format("%.2f %s", fileSize, units[unitIndex]);
     }
 
     /**

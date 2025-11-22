@@ -125,8 +125,10 @@ public class BamsArchiveServiceImpl implements IBamsArchiveService
         int result = bamsArchiveMapper.insertBamsArchive(bamsArchive);
 
         // 记录审计日志
+        String createDesc = String.format("创建档案【%s】，档案编号：%s",
+                bamsArchive.getTitle(), bamsArchive.getArchiveNumber());
         createAuditLog(bamsArchive.getArchiveId(), null, "CREATE", "档案管理",
-                "创建档案：" + bamsArchive.getTitle(), null, null, null);
+                createDesc, null, null, null);
 
         return result;
     }
@@ -207,8 +209,10 @@ public class BamsArchiveServiceImpl implements IBamsArchiveService
         auditLogMapper.deleteByArchiveId(archiveId);
 
         // 记录删除日志
+        String deleteDesc = String.format("永久删除档案【%s】（编号：%s）",
+                archive.getTitle(), archive.getArchiveNumber());
         createAuditLog(archiveId, null, "DELETE", "档案管理",
-                "删除档案：" + archive.getTitle(), null, null, null);
+                deleteDesc, null, null, null);
 
         // 删除档案
         return bamsArchiveMapper.deleteBamsArchiveByArchiveId(archiveId);
@@ -231,8 +235,10 @@ public class BamsArchiveServiceImpl implements IBamsArchiveService
         }
 
         // 记录审计日志
+        String recycleDesc = String.format("将档案【%s】（编号：%s）移至回收站",
+                archive.getTitle(), archive.getArchiveNumber());
         createAuditLog(archiveId, null, "RECYCLE", "档案管理",
-                "将档案移至回收站：" + archive.getTitle(), null, null, null);
+                recycleDesc, null, null, null);
 
         return bamsArchiveMapper.updateDelFlag(archiveId, "1");
     }
@@ -272,8 +278,10 @@ public class BamsArchiveServiceImpl implements IBamsArchiveService
         }
 
         // 记录审计日志
+        String restoreDesc = String.format("从回收站恢复档案【%s】（编号：%s）",
+                archive.getTitle(), archive.getArchiveNumber());
         createAuditLog(archiveId, null, "RESTORE", "档案管理",
-                "从回收站恢复档案：" + archive.getTitle(), null, null, null);
+                restoreDesc, null, null, null);
 
         return bamsArchiveMapper.updateDelFlag(archiveId, "0");
     }
@@ -500,7 +508,11 @@ public class BamsArchiveServiceImpl implements IBamsArchiveService
         log.setArchiveId(archiveId);
         log.setOperationType("UPDATE");
         log.setOperationModule("元数据修改");
-        log.setOperationDesc("修改" + fieldLabel);
+        
+        // 生成详细的操作描述
+        String operationDesc = buildDetailedDescription(fieldLabel, oldValue, newValue);
+        log.setOperationDesc(operationDesc);
+        
         log.setFieldName(fieldName);
         log.setOldValue(oldValue);
         log.setNewValue(newValue);
@@ -509,6 +521,64 @@ public class BamsArchiveServiceImpl implements IBamsArchiveService
         log.setIpAddress(IpUtils.getIpAddr());
         return log;
     }
+
+    /**
+     * 构建详细的修改描述
+     */
+    private String buildDetailedDescription(String fieldLabel, String oldValue, String newValue)
+    {
+        StringBuilder desc = new StringBuilder("修改");
+        desc.append(fieldLabel).append("：");
+        
+        // 处理空值
+        String oldDisplay = (oldValue == null || oldValue.isEmpty()) ? "【空】" : oldValue;
+        String newDisplay = (newValue == null || newValue.isEmpty()) ? "【空】" : newValue;
+        
+        // 对于标签字段，解析 JSON 显示更友好
+        if ("标签".equals(fieldLabel))
+        {
+            oldDisplay = formatTagsForDisplay(oldValue);
+            newDisplay = formatTagsForDisplay(newValue);
+        }
+        
+        // 对于长文本，截断显示
+        if (oldDisplay.length() > 50)
+        {
+            oldDisplay = oldDisplay.substring(0, 47) + "...";
+        }
+        if (newDisplay.length() > 50)
+        {
+            newDisplay = newDisplay.substring(0, 47) + "...";
+        }
+        
+        desc.append(oldDisplay).append(" → ").append(newDisplay);
+        return desc.toString();
+    }
+
+    /**
+     * 格式化标签显示
+     */
+    private String formatTagsForDisplay(String tagsJson)
+    {
+        if (tagsJson == null || tagsJson.isEmpty())
+        {
+            return "【无】";
+        }
+        
+        try
+        {
+            List<String> tags = JSON.parseArray(tagsJson, String.class);
+            if (tags == null || tags.isEmpty())
+            {
+                return "【无】";
+            }
+            return String.join(", ", tags);
+        }
+        catch (Exception e)
+        {
+            return tagsJson;
+        }
+    }    
 
     /**
      * 创建审计日志
