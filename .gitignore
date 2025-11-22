@@ -1,49 +1,37 @@
-######################################################################
-# Build Tools
-
-.gradle
-/build/
-!gradle/wrapper/gradle-wrapper.jar
-
+# 编译输出
 target/
-!.mvn/wrapper/maven-wrapper.jar
+*.class
 
-######################################################################
-# IDE
-
-### STS ###
-.apt_generated
-.classpath
-.factorypath
-.project
-.settings
-.springBeans
-
-### IntelliJ IDEA ###
-.idea
-*.iws
-*.iml
-*.ipr
-
-### JRebel ###
-rebel.xml
-
-### NetBeans ###
-nbproject/private/
-build/*
-nbbuild/
-dist/
-nbdist/
-.nb-gradle/
-
-######################################################################
-# Others
+# 日志文件
 *.log
-*.xml.versionsBackup
-*.swp
-
-!*/build/*.java
-!*/build/*.html
-!*/build/*.xml
-*.pid
 logs/
+backend.log
+frontend.log
+
+# IDE
+.idea/
+*.iml
+.vscode/
+.DS_Store
+
+# Node
+node_modules/
+dist/
+.umi/
+.umi-production/
+
+# 临时文件
+*.tmp
+*.bak
+*.swp
+*~
+
+# PID 文件
+*.pid
+
+# 上传文件目录
+uploadPath/
+
+# 其他
+.react-ui.pid
+.ruoyi-admin.pid
