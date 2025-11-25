@@ -46,7 +46,7 @@ public class BamsProjectStage extends BaseEntity
 
     /**
      * 文件选项内部类
-     * 用于返回标准文件的ID和中文名称
+     * 用于返回标准文件的ID、中文名称和对应的档案列表
      */
     public static class FileOption
     {
@@ -55,6 +55,9 @@ public class BamsProjectStage extends BaseEntity
 
         /** 中文名称（用于显示） */
         private String name;
+
+        /** 该标准文件对应的档案列表 */
+        private List<BamsArchive> archives;
 
         public FileOption()
         {
@@ -84,6 +87,16 @@ public class BamsProjectStage extends BaseEntity
         public void setName(String name)
         {
             this.name = name;
+        }
+
+        public List<BamsArchive> getArchives()
+        {
+            return archives;
+        }
+
+        public void setArchives(List<BamsArchive> archives)
+        {
+            this.archives = archives;
         }
     }
 

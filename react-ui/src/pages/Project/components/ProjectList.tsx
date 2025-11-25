@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Card, Input, Select, Checkbox, Button, Table, Tag, Progress, Space, Tooltip, Row, Col } from 'antd';
 import { SearchOutlined, PlusOutlined, DownloadOutlined, EyeOutlined, EditOutlined, DeleteOutlined, UndoOutlined } from '@ant-design/icons';
+import { history } from '@umijs/max';
 import type { ColumnsType } from 'antd/es/table';
 
 interface Project {
@@ -46,11 +47,11 @@ export default function ProjectList({ projects, onNewProject, onEditProject }: P
   const filteredProjects = projects.filter(project => {
     if (!showDeleted && project.isDeleted) return false;
     if (showDeleted && !project.isDeleted) return false;
-    
+
     if (searchKeyword && !project.code.includes(searchKeyword) && !project.name.includes(searchKeyword)) return false;
     if (statusFilter && project.status !== statusFilter) return false;
     if (managerFilter && project.manager !== managerFilter) return false;
-    
+
     return true;
   });
 
@@ -157,8 +158,7 @@ export default function ProjectList({ projects, onNewProject, onEditProject }: P
                   type="link"
                   icon={<EyeOutlined />}
                   onClick={() => {
-                    // TODO: 实现详情功能
-                    console.log('查看详情', record);
+                    history.push(`/project/detail/${record.id}`);
                   }}
                 >
                   详情

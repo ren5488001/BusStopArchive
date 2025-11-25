@@ -33,7 +33,7 @@ export default function Project() {
       label: (
         <Space>
           <BuildOutlined />
-          项目信息维护
+          项目列表
         </Space>
       ),
     },

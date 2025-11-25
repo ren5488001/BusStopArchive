@@ -46,7 +46,6 @@ export type ProjectType = {
   totalRequiredFiles?: number;
   actualArchivedFiles?: number;
   projectDesc?: string;
-  status?: string;
   createTime?: string;
   updateTime?: string;
   remark?: string;
@@ -56,6 +55,7 @@ export type ProjectType = {
 export type FileOptionType = {
   id: string; // 字典值
   name: string; // 中文名称
+  archives?: any[]; // 该标准文件对应的档案列表
 };
 
 /** 项目阶段类型 */
@@ -131,6 +131,15 @@ export async function updateProject(
   });
 }
 
+/** 获取项目的档案数量 */
+export async function getProjectArchiveCount(
+  projectId: number
+): Promise<ApiResponse<number>> {
+  return request(`/api/bams/project/archiveCount/${projectId}`, {
+    method: 'GET',
+  });
+}
+
 /** 删除项目 */
 export async function deleteProject(
   projectIds: number[]
@@ -173,5 +182,14 @@ export async function cleanProject(projectIds: number[]) {
   return request('/api/bams/project/recycle/clean', {
     method: 'POST',
     data: projectIds,
+  });
+}
+
+/** 刷新项目统计数据 */
+export async function refreshProjectStatistics(
+  projectId: number
+): Promise<ApiResponse<void>> {
+  return request(`/api/bams/project/refreshStatistics/${projectId}`, {
+    method: 'POST',
   });
 }

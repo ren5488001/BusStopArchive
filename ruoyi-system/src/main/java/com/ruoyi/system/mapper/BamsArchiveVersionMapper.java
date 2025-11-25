@@ -10,8 +10,7 @@ import org.apache.ibatis.annotations.Param;
  * @author ruoyi
  * @date 2025-11-19
  */
-public interface BamsArchiveVersionMapper
-{
+public interface BamsArchiveVersionMapper {
     /**
      * 查询档案版本
      *
@@ -75,15 +74,6 @@ public interface BamsArchiveVersionMapper
      * @return 结果
      */
     public int deleteByArchiveId(Long archiveId);
-
-    /**
-     * 更新当前版本标识
-     *
-     * @param archiveId 档案ID
-     * @param versionId 版本ID
-     * @return 结果
-     */
-    public int updateCurrentVersion(@Param("archiveId") Long archiveId, @Param("versionId") Long versionId);
 
     /**
      * 取消当前版本标识

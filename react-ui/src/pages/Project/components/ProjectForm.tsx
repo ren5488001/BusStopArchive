@@ -1,7 +1,9 @@
 import { useState, useEffect, memo } from 'react';
-import { Modal, Form, Input, Select, InputNumber, message, Spin, Space } from 'antd';
+import { Modal, Form, Input, Select, InputNumber, message, Spin, Space, Button } from 'antd';
+import { EnvironmentOutlined } from '@ant-design/icons';
 import { addProject, updateProject, type ProjectType } from '@/services/bams/project';
 import { getTemplateList, type StageTemplateType } from '@/services/bams/stageTemplate';
+import MapPicker from '@/components/MapPicker';
 
 const { TextArea } = Input;
 
@@ -20,6 +22,7 @@ const ProjectForm = memo(({ project, onClose }: ProjectFormProps) => {
   const [templates, setTemplates] = useState<StageTemplateType[]>([]);
   const [templatesLoading, setTemplatesLoading] = useState(false);
   const [originalTemplateId, setOriginalTemplateId] = useState<number | undefined>();
+  const [mapPickerVisible, setMapPickerVisible] = useState(false);
 
   // 加载阶段模板列表
   useEffect(() => {
@@ -75,6 +78,15 @@ const ProjectForm = memo(({ project, onClose }: ProjectFormProps) => {
         },
       });
     }
+  };
+
+  // 处理地图选点确认
+  const handleMapPickerConfirm = (lng: number, lat: number) => {
+    form.setFieldsValue({
+      longitude: lng,
+      latitude: lat,
+    });
+    message.success('坐标已填充');
   };
 
   const handleSubmit = async () => {
@@ -160,34 +172,43 @@ const ProjectForm = memo(({ project, onClose }: ProjectFormProps) => {
           </Form.Item>
 
           <Form.Item label="GIS坐标">
-            <Space.Compact style={{ width: '100%' }}>
-              <Form.Item
-                name="latitude"
-                noStyle
-                rules={[
-                  { type: 'number', min: -90, max: 90, message: '纬度范围：-90~90' },
-                ]}
+            <Space direction="vertical" style={{ width: '100%' }}>
+              <Space.Compact style={{ width: '100%' }}>
+                <Form.Item
+                  name="latitude"
+                  noStyle
+                  rules={[
+                    { type: 'number', min: -90, max: 90, message: '纬度范围：-90~90' },
+                  ]}
+                >
+                  <InputNumber
+                    style={{ width: '50%' }}
+                    placeholder="纬度"
+                    precision={6}
+                  />
+                </Form.Item>
+                <Form.Item
+                  name="longitude"
+                  noStyle
+                  rules={[
+                    { type: 'number', min: -180, max: 180, message: '经度范围：-180~180' },
+                  ]}
+                >
+                  <InputNumber
+                    style={{ width: '50%' }}
+                    placeholder="经度"
+                    precision={6}
+                  />
+                </Form.Item>
+              </Space.Compact>
+              <Button
+                icon={<EnvironmentOutlined />}
+                onClick={() => setMapPickerVisible(true)}
+                style={{ width: '100%' }}
               >
-                <InputNumber
-                  style={{ width: '50%' }}
-                  placeholder="纬度"
-                  precision={6}
-                />
-              </Form.Item>
-              <Form.Item
-                name="longitude"
-                noStyle
-                rules={[
-                  { type: 'number', min: -180, max: 180, message: '经度范围：-180~180' },
-                ]}
-              >
-                <InputNumber
-                  style={{ width: '50%' }}
-                  placeholder="经度"
-                  precision={6}
-                />
-              </Form.Item>
-            </Space.Compact>
+                在地图上选择位置
+              </Button>
+            </Space>
           </Form.Item>
 
           <Form.Item
@@ -206,6 +227,17 @@ const ProjectForm = memo(({ project, onClose }: ProjectFormProps) => {
           </Form.Item>
         </Form>
       </Spin>
+
+      <MapPicker
+        visible={mapPickerVisible}
+        onClose={() => setMapPickerVisible(false)}
+        onConfirm={handleMapPickerConfirm}
+        defaultPosition={
+          form.getFieldValue('longitude') && form.getFieldValue('latitude')
+            ? [form.getFieldValue('longitude'), form.getFieldValue('latitude')]
+            : undefined
+        }
+      />
     </Modal>
   );
 });

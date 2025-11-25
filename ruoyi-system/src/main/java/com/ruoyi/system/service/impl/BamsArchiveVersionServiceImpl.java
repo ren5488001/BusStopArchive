@@ -180,7 +180,9 @@ public class BamsArchiveVersionServiceImpl implements IBamsArchiveVersionService
         try {
             // 构建存储路径：archive/{archiveId}/
             String subDir = "archive/" + archiveId;
-            filePath = uploadFile(file, subDir);
+            // 使用档案编号和版本号命名文件，避免中文乱码
+            String customFileName = archive.getArchiveNumber() + "_" + versionNumber;
+            filePath = uploadFile(file, subDir, customFileName);
         } catch (IOException e) {
             throw new ServiceException("文件上传失败：" + e.getMessage());
         }
@@ -213,42 +215,12 @@ public class BamsArchiveVersionServiceImpl implements IBamsArchiveVersionService
         archiveMapper.updateVersionInfo(archiveId, versionNumber, versionCount, file.getSize());
 
         // 记录审计日志
-        String uploadDesc = String.format("上传新版本【%s】，文件名：%s，大小：%s", 
+        String uploadDesc = String.format("上传新版本【%s】，文件名：%s，大小：%s",
                 versionNumber, fileName, formatFileSize(file.getSize()));
         createAuditLog(archiveId, version.getVersionId(), "VERSION_UPLOAD", "版本管理",
                 uploadDesc);
 
         return version;
-    }
-
-    /**
-     * 设置当前版本
-     *
-     * @param archiveId 档案ID
-     * @param versionId 版本ID
-     * @return 结果
-     */
-    @Override
-    @Transactional(rollbackFor = Exception.class)
-    public int setCurrentVersion(Long archiveId, Long versionId) {
-        BamsArchiveVersion version = versionMapper.selectBamsArchiveVersionByVersionId(versionId);
-        if (version == null || !version.getArchiveId().equals(archiveId)) {
-            throw new ServiceException("版本不存在或不属于该档案");
-        }
-
-        // 更新当前版本
-        int result = versionMapper.updateCurrentVersion(archiveId, versionId);
-
-        // 更新档案的当前版本号和文件大小
-        archiveMapper.updateVersionInfo(archiveId, version.getVersionNumber(), null, version.getFileSize());
-
-        // 记录审计日志
-        String switchDesc = String.format("切换当前版本为【%s】，文件：%s", 
-                version.getVersionNumber(), version.getFileName());
-        createAuditLog(archiveId, versionId, "VERSION_SWITCH", "版本管理",
-                switchDesc);
-
-        return result;
     }
 
     /**
@@ -297,7 +269,7 @@ public class BamsArchiveVersionServiceImpl implements IBamsArchiveVersionService
         deletePhysicalFile(version.getFilePath());
 
         // 记录审计日志
-        String deleteDesc = String.format("删除版本【%s】，文件：%s", 
+        String deleteDesc = String.format("删除版本【%s】，文件：%s",
                 version.getVersionNumber(), version.getFileName());
         createAuditLog(version.getArchiveId(), versionId, "VERSION_DELETE", "版本管理",
                 deleteDesc);
@@ -342,7 +314,7 @@ public class BamsArchiveVersionServiceImpl implements IBamsArchiveVersionService
         }
 
         // 记录审计日志
-        String downloadDesc = String.format("下载文件【%s】（版本：%s）", 
+        String downloadDesc = String.format("下载文件【%s】（版本：%s）",
                 version.getFileName(), version.getVersionNumber());
         createAuditLog(version.getArchiveId(), versionId, "DOWNLOAD", "文件操作",
                 downloadDesc);
@@ -358,7 +330,19 @@ public class BamsArchiveVersionServiceImpl implements IBamsArchiveVersionService
      * @return 相对路径，例如：/archive/4/2025/11/21/xxx.jpg
      */
     private String uploadFile(MultipartFile file, String subDir) throws IOException {
-        // 生成文件名：日期路径/原文件名_序列号.扩展名
+        return uploadFile(file, subDir, null);
+    }
+
+    /**
+     * 上传文件并返回相对路径（支持自定义文件名）
+     * 
+     * @param file           文件
+     * @param subDir         子目录
+     * @param customFileName 自定义文件名（不含扩展名），如果为 null 则使用原文件名
+     * @return 相对路径，例如：/archive/4/2025/11/21/xxx.jpg
+     */
+    private String uploadFile(MultipartFile file, String subDir, String customFileName) throws IOException {
+        // 生成文件名：日期路径/文件名_时间戳.扩展名
         String datePath = java.time.LocalDate.now().toString().replace("-", "/");
         String originalFilename = file.getOriginalFilename();
         if (originalFilename == null || originalFilename.isEmpty()) {
@@ -368,8 +352,20 @@ public class BamsArchiveVersionServiceImpl implements IBamsArchiveVersionService
             throw new IOException("文件必须包含扩展名");
         }
 
-        String baseName = originalFilename.substring(0, originalFilename.lastIndexOf("."));
+        // 获取扩展名
         String extension = originalFilename.substring(originalFilename.lastIndexOf("."));
+
+        // 使用自定义文件名或原文件名
+        String baseName;
+        if (customFileName != null && !customFileName.isEmpty()) {
+            // 使用自定义文件名（档案编号_版本号），避免中文乱码
+            baseName = customFileName;
+        } else {
+            // 使用原文件名（可能包含中文）
+            baseName = originalFilename.substring(0, originalFilename.lastIndexOf("."));
+        }
+
+        // 文件名格式：日期路径/基础名_时间戳.扩展名
         String fileName = datePath + "/" + baseName + "_" + System.currentTimeMillis() + extension;
 
         // 构建完整路径
@@ -501,16 +497,16 @@ public class BamsArchiveVersionServiceImpl implements IBamsArchiveVersionService
         if (size == null || size == 0) {
             return "0 B";
         }
-        
-        final String[] units = {"B", "KB", "MB", "GB", "TB"};
+
+        final String[] units = { "B", "KB", "MB", "GB", "TB" };
         int unitIndex = 0;
         double fileSize = size.doubleValue();
-        
+
         while (fileSize >= 1024 && unitIndex < units.length - 1) {
             fileSize /= 1024;
             unitIndex++;
         }
-        
+
         return String.format("%.2f %s", fileSize, units[unitIndex]);
     }
 

@@ -36,14 +36,14 @@ import {
   updateArchive,
   uploadVersion,
   downloadVersion,
-  previewVersion,
-  setCurrentVersion,
   getAuditLogsByArchiveId,
   type ArchiveType,
   type ArchiveVersionType,
   type AuditLogType,
 } from '@/services/bams/archive';
+import { getProjectStages } from '@/services/bams/project';
 import { getDictSelectOption } from '@/services/system/dict';
+import FilePreview from '@/components/FilePreview';
 import dayjs from 'dayjs';
 
 const { TextArea } = Input;
@@ -69,6 +69,13 @@ const ArchiveDetail: React.FC<ArchiveDetailProps> = ({ archive: initialArchive, 
   // 字典数据
   const [fileStandardOptions, setFileStandardOptions] = useState<any[]>([]);
   const [archiveCategoryOptions, setArchiveCategoryOptions] = useState<any[]>([]);
+  // 当前阶段的标准文件选项（过滤后）
+  const [stageFileOptions, setStageFileOptions] = useState<any[] | null>(null);
+
+  // 文件预览相关状态
+  const [previewFileUrl, setPreviewFileUrl] = useState<string>('');
+  const [previewFileType, setPreviewFileType] = useState<string>('');
+  const [previewFileName, setPreviewFileName] = useState<string>('');
 
   // 加载详细数据和字典数据
   useEffect(() => {
@@ -78,6 +85,42 @@ const ArchiveDetail: React.FC<ArchiveDetailProps> = ({ archive: initialArchive, 
     }
     loadDictionaries();
   }, [initialArchive?.archiveId]);
+
+  // 当档案信息加载完成后，加载对应的项目阶段配置
+  useEffect(() => {
+    if (archive?.projectId && archive?.stage) {
+      loadProjectStageFiles(archive.projectId, archive.stage);
+    }
+  }, [archive?.projectId, archive?.stage]);
+
+  const loadProjectStageFiles = async (projectId: number, stage: string) => {
+    try {
+      const res = await getProjectStages(projectId);
+      if (res.code === 200 && res.data) {
+        // 尝试匹配阶段（支持 ID、名称、模糊匹配）
+        const matchStage = res.data.find(s =>
+          s.stageId === stage ||
+          s.stageDisplayName === stage ||
+          stage.includes(s.stageDisplayName) ||
+          s.stageDisplayName.includes(stage)
+        );
+
+        if (matchStage) {
+          const options = (matchStage.requiredFileList || []).map(f => ({
+            value: f.id,
+            label: f.name
+          }));
+          setStageFileOptions(options);
+          return;
+        }
+      }
+      // 未匹配到阶段，重置为 null（将使用全量字典）
+      setStageFileOptions(null);
+    } catch (error) {
+      console.error('加载项目阶段配置失败:', error);
+      setStageFileOptions(null);
+    }
+  };
 
   const loadDictionaries = async () => {
     try {
@@ -100,6 +143,28 @@ const ArchiveDetail: React.FC<ArchiveDetailProps> = ({ archive: initialArchive, 
       if (response.code === 200 && response.data) {
         setArchive(response.data);
         setVersionHistory(response.data.versions || []);
+
+        // 自动加载当前版本的文件预览
+        const currentVersion = response.data.versions?.find((v: ArchiveVersionType) => v.isCurrent === '1');
+        if (currentVersion) {
+          // 使用后端已有的预览 API
+          const previewUrl = `/api/system/archive/version/preview/${currentVersion.versionId}`;
+          console.log('设置预览 URL:', previewUrl);
+          console.log('文件信息:', {
+            versionId: currentVersion.versionId,
+            fileName: currentVersion.fileName,
+            fileType: currentVersion.fileType,
+            filePath: currentVersion.filePath,
+          });
+
+          setPreviewFileUrl(previewUrl);
+          setPreviewFileName(currentVersion.fileName || '');
+
+          // 从文件名提取文件类型
+          const fileExt = currentVersion.fileName?.split('.').pop()?.toLowerCase() || '';
+          setPreviewFileType(fileExt);
+          console.log('文件扩展名:', fileExt);
+        }
       }
     } catch (error) {
       console.error('加载档案详情失败:', error);
@@ -197,35 +262,34 @@ const ArchiveDetail: React.FC<ArchiveDetailProps> = ({ archive: initialArchive, 
     }
   };
 
-  const handlePreviewVersion = async (versionId: number) => {
+  const handlePreviewVersion = (version: ArchiveVersionType) => {
     try {
-      await previewVersion(versionId);
+      // 更新左侧预览窗口显示选中的版本
+      const previewUrl = `/api/system/archive/version/preview/${version.versionId}`;
+      console.log('切换预览版本:', {
+        versionId: version.versionId,
+        versionNumber: version.versionNumber,
+        fileName: version.fileName,
+      });
+
+      setPreviewFileUrl(previewUrl);
+      setPreviewFileName(version.fileName || '');
+
+      // 从文件名提取文件类型
+      const fileExt = version.fileName?.split('.').pop()?.toLowerCase() || '';
+      setPreviewFileType(fileExt);
+
+      message.success(`已切换到版本 ${version.versionNumber}`);
     } catch (error) {
       message.error('预览失败');
       console.error(error);
     }
   };
 
-  const handleSetCurrentVersion = async (versionId: number) => {
-    try {
-      setLoading(true);
-      const response = await setCurrentVersion(archive.archiveId!, versionId);
-      if (response.code === 200) {
-        message.success('已切换到当前版本');
-        loadArchiveDetail();
-      } else {
-        message.error(response.msg || '切换失败');
-      }
-    } catch (error) {
-      console.error('切换版本失败:', error);
-      message.error('切换版本失败');
-    } finally {
-      setLoading(false);
-    }
-  };
+
 
   const metadataContent = (
-    <div style={{ padding: '0 16px' }}>
+    <div style={{ padding: '16px', height: 'calc(100vh - 300px)', overflowY: 'auto' }}>
       <div style={{ marginBottom: 24, display: 'flex', justifyContent: 'space-between' }}>
         <h4 style={{ fontSize: 16, fontWeight: 600 }}>档案元数据</h4>
         {!isEditing ? (
@@ -262,12 +326,12 @@ const ArchiveDetail: React.FC<ArchiveDetailProps> = ({ archive: initialArchive, 
 
       {!isEditing ? (
         <Descriptions column={1} bordered labelStyle={{ width: '120px', fontWeight: 500 }}>
-          <Descriptions.Item label="档号">
+          <Descriptions.Item label="档案编号">
             <code style={{ backgroundColor: '#f0f0f0', padding: '4px 8px', borderRadius: 4 }}>
               {archive.archiveNumber}
             </code>
           </Descriptions.Item>
-          <Descriptions.Item label="题名">{archive.title}</Descriptions.Item>
+          <Descriptions.Item label="档案名称">{archive.title}</Descriptions.Item>
           <Descriptions.Item label="项目">{archive.projectName}</Descriptions.Item>
           <Descriptions.Item label="阶段">
             <Tag color="blue">{archive.stage}</Tag>
@@ -331,7 +395,7 @@ const ArchiveDetail: React.FC<ArchiveDetailProps> = ({ archive: initialArchive, 
           </Form.Item>
           <Form.Item name="fileStandard" label="文件标准">
             <Select placeholder="请选择文件标准" allowClear>
-              {fileStandardOptions.map((option) => (
+              {(stageFileOptions || fileStandardOptions).map((option) => (
                 <Option key={option.value} value={option.value}>
                   {option.label}
                 </Option>
@@ -373,7 +437,7 @@ const ArchiveDetail: React.FC<ArchiveDetailProps> = ({ archive: initialArchive, 
   );
 
   const versionsContent = (
-    <div style={{ padding: '0 16px' }}>
+    <div style={{ padding: '16px', height: 'calc(100vh - 300px)', overflowY: 'auto' }}>
       <h4 style={{ fontSize: 16, fontWeight: 600, marginBottom: 16 }}>版本历史</h4>
       {loading ? (
         <div style={{ textAlign: 'center', padding: '40px 0' }}>
@@ -402,7 +466,7 @@ const ArchiveDetail: React.FC<ArchiveDetailProps> = ({ archive: initialArchive, 
                     type="link"
                     size="small"
                     icon={<EyeOutlined />}
-                    onClick={() => handlePreviewVersion(version.versionId!)}
+                    onClick={() => handlePreviewVersion(version)}
                   >
                     预览
                   </Button>
@@ -414,22 +478,19 @@ const ArchiveDetail: React.FC<ArchiveDetailProps> = ({ archive: initialArchive, 
                   >
                     下载
                   </Button>
-                  {version.isCurrent !== '1' && (
-                    <Button
-                      type="link"
-                      size="small"
-                      onClick={() => handleSetCurrentVersion(version.versionId!)}
-                    >
-                      设为当前
-                    </Button>
-                  )}
+
                 </Space>
               </div>
               <div style={{ fontSize: 12, color: '#666' }}>
-                <div>
-                  {version.uploadTime ? dayjs(version.uploadTime).format('YYYY-MM-DD HH:mm') : '-'} · {version.uploadBy || '未知'}
+                <div style={{ marginBottom: 4 }}>
+                  上传时间：{version.uploadTime ? dayjs(version.uploadTime).format('YYYY-MM-DD HH:mm') : '-'}
                 </div>
-                {version.versionRemark && <div style={{ marginTop: 4 }}>{version.versionRemark}</div>}
+                <div style={{ marginBottom: 4 }}>
+                  上传者：{version.uploadBy || '未知'}
+                </div>
+                <div>
+                  版本备注：{version.versionRemark || '-'}
+                </div>
               </div>
             </Card>
           ))}
@@ -443,32 +504,30 @@ const ArchiveDetail: React.FC<ArchiveDetailProps> = ({ archive: initialArchive, 
   );
 
   const logsContent = (
-    <div style={{ padding: '0 16px' }}>
+    <div style={{ padding: '16px', height: 'calc(100vh - 300px)', overflowY: 'auto' }}>
       <h4 style={{ fontSize: 16, fontWeight: 600, marginBottom: 16 }}>操作日志</h4>
       {loading ? (
         <div style={{ textAlign: 'center', padding: '40px 0' }}>
           <Spin />
         </div>
       ) : operationLogs.length > 0 ? (
-        <div style={{ maxHeight: 500, overflowY: 'auto' }}>
-          <Timeline
-            items={operationLogs.map((log) => ({
-              children: (
-                <div>
-                  <div style={{ fontSize: 14, color: '#000' }}>
-                    <strong>{log.operator || '系统'}</strong> {log.operationType}
-                  </div>
-                  <div style={{ fontSize: 12, color: '#666', marginTop: 4 }}>
-                    {log.operationDesc || log.changeDetail}
-                  </div>
-                  <div style={{ fontSize: 12, color: '#999', marginTop: 4 }}>
-                    {log.operationTime ? dayjs(log.operationTime).format('YYYY-MM-DD HH:mm:ss') : '-'}
-                  </div>
+        <Timeline
+          items={operationLogs.map((log) => ({
+            children: (
+              <div>
+                <div style={{ fontSize: 14, color: '#000' }}>
+                  <strong>{log.operator || '系统'}</strong> {log.operationType}
                 </div>
-              ),
-            }))}
-          />
-        </div>
+                <div style={{ fontSize: 12, color: '#666', marginTop: 4 }}>
+                  {log.operationDesc || log.changeDetail}
+                </div>
+                <div style={{ fontSize: 12, color: '#999', marginTop: 4 }}>
+                  {log.operationTime ? dayjs(log.operationTime).format('YYYY-MM-DD HH:mm:ss') : '-'}
+                </div>
+              </div>
+            ),
+          }))}
+        />
       ) : (
         <div style={{ textAlign: 'center', padding: '40px 0', color: '#999' }}>
           暂无操作日志
@@ -499,90 +558,82 @@ const ArchiveDetail: React.FC<ArchiveDetailProps> = ({ archive: initialArchive, 
     <PageContainer
       header={{
         title: archive.title,
-        subTitle: `档号：${archive.archiveNumber}`,
+        subTitle: `档案编号：${archive.archiveNumber}`,
         onBack: onBack,
         breadcrumb: {},
       }}
     >
-      <Row gutter={24}>
+      <Row gutter={24} style={{ display: 'flex', alignItems: 'stretch', minHeight: 'calc(100vh - 220px)' }}>
         {/* 左侧：文件预览区 */}
-        <Col span={16}>
-          <Space direction="vertical" size="middle" style={{ width: '100%' }}>
+        <Col span={16} style={{ display: 'flex', flexDirection: 'column' }}>
+          <Card
+            style={{ flex: 1, display: 'flex', flexDirection: 'column' }}
+            bodyStyle={{ padding: 0, flex: 1, display: 'flex', flexDirection: 'column' }}
+          >
             {/* 预览操作栏 */}
-            <Card>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <Space>
-                  <span style={{ fontWeight: 600 }}>文件预览</span>
-                  <span style={{ color: '#999' }}>当前版本：{archive.currentVersion || 'V1.0'}</span>
-                </Space>
-                <Space>
-                  <Button
-                    type="primary"
-                    icon={<DownloadOutlined />}
-                    onClick={() => {
-                      const currentVersion = versionHistory.find(v => v.isCurrent === '1');
-                      if (currentVersion) {
-                        handleDownloadVersion(currentVersion.versionId!, currentVersion.fileName);
-                      } else {
-                        message.warning('未找到当前版本');
-                      }
-                    }}
-                  >
-                    下载
-                  </Button>
-                  <Button
-                    icon={<UploadOutlined />}
-                    style={{ backgroundColor: '#52c41a', borderColor: '#52c41a', color: '#fff' }}
-                    onClick={() => setShowVersionUpload(true)}
-                  >
-                    上传新版本
-                  </Button>
-                  <Button
-                    icon={<FullscreenOutlined />}
-                    onClick={() => {
-                      const currentVersion = versionHistory.find(v => v.isCurrent === '1');
-                      if (currentVersion) {
-                        handlePreviewVersion(currentVersion.versionId!);
-                      } else {
-                        message.warning('未找到当前版本');
-                      }
-                    }}
-                  >
-                    全屏预览
-                  </Button>
-                </Space>
-              </div>
-            </Card>
+            <div style={{ padding: '16px 24px', borderBottom: '1px solid #f0f0f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <Space>
+                <span style={{ fontWeight: 600 }}>文件预览</span>
+                <span style={{ color: '#999' }}>当前版本：{archive.currentVersion || 'V1.0'}</span>
+              </Space>
+              <Space>
+                <Button
+                  type="primary"
+                  icon={<DownloadOutlined />}
+                  onClick={() => {
+                    const currentVersion = versionHistory.find(v => v.isCurrent === '1');
+                    if (currentVersion) {
+                      handleDownloadVersion(currentVersion.versionId!, currentVersion.fileName);
+                    } else {
+                      message.warning('未找到当前版本');
+                    }
+                  }}
+                >
+                  下载
+                </Button>
+                <Button
+                  icon={<UploadOutlined />}
+                  style={{ backgroundColor: '#52c41a', borderColor: '#52c41a', color: '#fff' }}
+                  onClick={() => setShowVersionUpload(true)}
+                >
+                  上传新版本
+                </Button>
+              </Space>
+            </div>
 
             {/* 文件预览窗口 */}
-            <Card>
-              <div
-                style={{
-                  height: 600,
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  backgroundColor: '#fafafa',
-                  borderRadius: 4,
+            <div style={{ flex: 1, minHeight: 500, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+              <FilePreview
+                fileUrl={previewFileUrl}
+                fileType={previewFileType}
+                fileName={previewFileName}
+                height="100%"
+                style={{ flex: 1 }}
+                showToolbar={true}
+                onDownload={() => {
+                  const currentVersion = versionHistory.find(v => v.isCurrent === '1');
+                  if (currentVersion) {
+                    handleDownloadVersion(currentVersion.versionId!, currentVersion.fileName);
+                  }
                 }}
-              >
-                <div style={{ textAlign: 'center' }}>
-                  <FilePdfOutlined style={{ fontSize: 64, color: '#ff4d4f', marginBottom: 16 }} />
-                  <p style={{ fontSize: 16, marginBottom: 8 }}>PDF 文档预览</p>
-                  <p style={{ fontSize: 14, color: '#666', marginBottom: 16 }}>{archive.title}</p>
-                  <Button type="primary" size="large">
-                    点击预览文档
-                  </Button>
-                </div>
-              </div>
-            </Card>
-          </Space>
+              />
+            </div>
+          </Card>
         </Col>
 
         {/* 右侧：详情信息区 */}
-        <Col span={8}>
-          <Card>
-            <Tabs activeKey={activeTab} onChange={setActiveTab} items={tabItems} />
+        <Col span={8} style={{ display: 'flex', flexDirection: 'column' }}>
+          <Card
+            style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}
+            bodyStyle={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', padding: 0 }}
+          >
+            <Tabs
+              activeKey={activeTab}
+              onChange={setActiveTab}
+              items={tabItems}
+              style={{ flex: 1, display: 'flex', flexDirection: 'column' }}
+              className="archive-detail-tabs"
+            />
           </Card>
         </Col>
       </Row>

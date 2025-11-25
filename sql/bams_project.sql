@@ -28,7 +28,6 @@ CREATE TABLE `bams_project` (
   `project_desc` varchar(1000) DEFAULT NULL COMMENT '项目描述',
 
   -- 系统字段
-  `status` char(1) DEFAULT '0' COMMENT '状态（0正常 1停用）',
   `del_flag` char(1) DEFAULT '0' COMMENT '删除标志（0存在 2删除）',
   `create_by` varchar(64) DEFAULT '' COMMENT '创建者',
   `create_time` datetime DEFAULT NULL COMMENT '创建时间',

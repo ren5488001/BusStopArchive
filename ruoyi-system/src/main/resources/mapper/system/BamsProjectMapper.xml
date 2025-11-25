@@ -17,7 +17,6 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         <result property="totalRequiredFiles"    column="total_required_files"    />
         <result property="actualArchivedFiles"    column="actual_archived_files"    />
         <result property="projectDesc"    column="project_desc"    />
-        <result property="status"    column="status"    />
         <result property="delFlag"    column="del_flag"    />
         <result property="createBy"    column="create_by"    />
         <result property="createTime"    column="create_time"    />
@@ -29,7 +28,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
     <sql id="selectProjectVo">
         select project_id, project_code, project_name, project_manager, latitude, longitude,
                template_id, template_name, completeness_rate, total_required_files, actual_archived_files,
-               project_desc, status, del_flag, create_by, create_time, update_by, update_time, remark
+               project_desc, del_flag, create_by, create_time, update_by, update_time, remark
         from bams_project
     </sql>
 
@@ -88,7 +87,6 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             <if test="totalRequiredFiles != null">total_required_files,</if>
             <if test="actualArchivedFiles != null">actual_archived_files,</if>
             <if test="projectDesc != null">project_desc,</if>
-            <if test="status != null and status != ''">status,</if>
             <if test="delFlag != null and delFlag != ''">del_flag,</if>
             <if test="createBy != null and createBy != ''">create_by,</if>
             <if test="remark != null">remark,</if>
@@ -106,7 +104,6 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             <if test="totalRequiredFiles != null">#{totalRequiredFiles},</if>
             <if test="actualArchivedFiles != null">#{actualArchivedFiles},</if>
             <if test="projectDesc != null">#{projectDesc},</if>
-            <if test="status != null and status != ''">#{status},</if>
             <if test="delFlag != null and delFlag != ''">#{delFlag},</if>
             <if test="createBy != null and createBy != ''">#{createBy},</if>
             <if test="remark != null">#{remark},</if>
@@ -127,7 +124,6 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             <if test="totalRequiredFiles != null">total_required_files = #{totalRequiredFiles},</if>
             <if test="actualArchivedFiles != null">actual_archived_files = #{actualArchivedFiles},</if>
             <if test="projectDesc != null">project_desc = #{projectDesc},</if>
-            <if test="status != null and status != ''">status = #{status},</if>
             <if test="updateBy != null and updateBy != ''">update_by = #{updateBy},</if>
             <if test="remark != null">remark = #{remark},</if>
             update_time = sysdate()
@@ -141,5 +137,46 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             #{projectId}
         </foreach>
     </update>
+
+    <!-- 驾驶舱统计查询 -->
+    <select id="countTotalProjects" resultType="Integer">
+        select count(*) from bams_project where del_flag = '0'
+    </select>
+
+    <select id="countOngoingProjects" resultType="Integer">
+        select count(*) from bams_project
+        where del_flag = '0' and completeness_rate &lt; 100
+    </select>
+
+    <select id="getAvgCompleteness" resultType="Integer">
+        select IFNULL(ROUND(AVG(completeness_rate)), 0) from bams_project where del_flag = '0'
+    </select>
+
+    <select id="getCompletenessDistribution" resultType="java.util.Map">
+        select
+            ranges.range_name as name,
+            IFNULL(stats.project_count, 0) as count,
+            ranges.color
+        from (
+            select '0-30% (预警)' as range_name, 1 as sort_order, '#ff4d4f' as color
+            union all
+            select '30-70% (进行中)' as range_name, 2 as sort_order, '#faad14' as color
+            union all
+            select '70-100% (接近完成)' as range_name, 3 as sort_order, '#52c41a' as color
+        ) ranges
+        left join (
+            select
+                case
+                    when completeness_rate &lt; 30 then '0-30% (预警)'
+                    when completeness_rate &lt; 70 then '30-70% (进行中)'
+                    else '70-100% (接近完成)'
+                end as range_name,
+                count(*) as project_count
+            from bams_project
+            where del_flag = '0'
+            group by range_name
+        ) stats on ranges.range_name = stats.range_name
+        order by ranges.sort_order
+    </select>
 
 </mapper>

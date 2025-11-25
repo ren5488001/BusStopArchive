@@ -72,4 +72,32 @@ public interface BamsProjectMapper
      * @return 最大项目编号
      */
     public String selectMaxCode();
+
+    /**
+     * 统计项目总数（排除已删除）
+     *
+     * @return 项目总数
+     */
+    Integer countTotalProjects();
+
+    /**
+     * 统计在建中项目数量
+     *
+     * @return 在建中项目数量
+     */
+    Integer countOngoingProjects();
+
+    /**
+     * 获取平均完整度
+     *
+     * @return 平均完整度
+     */
+    Integer getAvgCompleteness();
+
+    /**
+     * 获取项目完成度分布统计
+     *
+     * @return 完成度分布列表（区间和数量）
+     */
+    List<java.util.Map<String, Object>> getCompletenessDistribution();
 }

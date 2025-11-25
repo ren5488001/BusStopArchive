@@ -96,14 +96,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         where version_id = #{versionId}
     </update>
 
-    <update id="updateCurrentVersion">
-        update bams_archive_version
-        set is_current = CASE
-            WHEN version_id = #{versionId} THEN '1'
-            ELSE '0'
-        END
-        where archive_id = #{archiveId}
-    </update>
+
 
     <update id="cancelCurrentVersion">
         update bams_archive_version

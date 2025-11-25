@@ -1,37 +1,36 @@
-import { Card, Row, Col, Progress, List, Tag, Space, Empty, Button } from 'antd';
+import { Card, Row, Col, Progress, Space } from 'antd';
 import {
   PieChartOutlined,
   BarChartOutlined,
   LineChartOutlined,
-  WarningOutlined,
-  CheckCircleOutlined,
 } from '@ant-design/icons';
 
 interface ArchiveData {
-  archiveTypes: { name: string; count: number; color: string }[];
-  phaseArchives: { phase: string; count: number }[];
+  archiveTypeDistribution: { name: string; count: number }[];
+  archiveByStage: { stage: string; count: number }[];
   monthlyTrend: { month: string; count: number }[];
 }
 
-interface Project {
-  id: string;
+interface CompletenessItem {
   name: string;
-  completeness: number;
-  status: string;
+  count: number;
+  color: string;
 }
 
 interface DetailChartsProps {
   data: ArchiveData;
-  projects: Project[];
+  completenessData: CompletenessItem[];
 }
 
-export default function DetailCharts({ data, projects }: DetailChartsProps) {
-  // 筛选高风险项目（完整度低于70%）
-  const highRiskProjects = projects.filter(p => p.completeness < 70);
+export default function DetailCharts({ data, completenessData }: DetailChartsProps) {
 
-  // 计算最大值用于柱状图缩放
-  const maxPhaseCount = Math.max(...data.phaseArchives.map(p => p.count));
-  const maxTrendCount = Math.max(...data.monthlyTrend.map(m => m.count));
+  // 计算最大值用于柱状图缩放，添加空数组保护
+  const maxPhaseCount = data.archiveByStage?.length > 0
+    ? Math.max(...data.archiveByStage.map(p => p.count))
+    : 1;
+  const maxTrendCount = data.monthlyTrend?.length > 0
+    ? Math.max(...data.monthlyTrend.map(m => m.count))
+    : 1;
 
   return (
     <Row gutter={[24, 24]}>
@@ -59,76 +58,115 @@ export default function DetailCharts({ data, projects }: DetailChartsProps) {
                 style={{ width: '100%', height: '100%', transform: 'rotate(-90deg)' }}
                 viewBox="0 0 200 200"
               >
-                {data.archiveTypes.map((type, index) => {
-                  const total = data.archiveTypes.reduce((sum, t) => sum + t.count, 0);
-                  const percentage = (type.count / total) * 100;
-                  const angle = (percentage / 100) * 360;
-                  const startAngle = data.archiveTypes.slice(0, index).reduce(
-                    (sum, t) => sum + ((t.count / total) * 360),
-                    0
-                  );
+                {(() => {
+                  // 只显示有数据的分类
+                  const validData = data.archiveTypeDistribution.filter(t => t.count > 0);
+                  const total = validData.reduce((sum, t) => sum + t.count, 0);
 
-                  const startAngleRad = (startAngle * Math.PI) / 180;
-                  const endAngleRad = ((startAngle + angle) * Math.PI) / 180;
+                  if (total === 0) {
+                    // 如果没有数据，显示灰色圆环
+                    return (
+                      <circle
+                        cx="100"
+                        cy="100"
+                        r="80"
+                        fill="#f0f0f0"
+                      />
+                    );
+                  }
 
-                  const largeArcFlag = angle > 180 ? 1 : 0;
-                  const x1 = 100 + 80 * Math.cos(startAngleRad);
-                  const y1 = 100 + 80 * Math.sin(startAngleRad);
-                  const x2 = 100 + 80 * Math.cos(endAngleRad);
-                  const y2 = 100 + 80 * Math.sin(endAngleRad);
+                  return validData.map((type, index) => {
+                    const percentage = (type.count / total) * 100;
+                    const angle = (percentage / 100) * 360;
+                    const startAngle = validData.slice(0, index).reduce(
+                      (sum, t) => sum + ((t.count / total) * 360),
+                      0
+                    );
 
-                  const pathData = [
-                    `M 100 100`,
-                    `L ${x1} ${y1}`,
-                    `A 80 80 0 ${largeArcFlag} 1 ${x2} ${y2}`,
-                    'Z',
-                  ].join(' ');
+                    const startAngleRad = (startAngle * Math.PI) / 180;
+                    const endAngleRad = ((startAngle + angle) * Math.PI) / 180;
 
-                  return (
-                    <path
-                      key={index}
-                      d={pathData}
-                      fill={type.color}
-                      style={{ transition: 'opacity 0.2s', cursor: 'pointer' }}
-                      onMouseEnter={(e) => {
-                        e.currentTarget.style.opacity = '0.8';
-                      }}
-                      onMouseLeave={(e) => {
-                        e.currentTarget.style.opacity = '1';
-                      }}
-                    />
-                  );
-                })}
+                    // 定义颜色数组
+                    const colors = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#6b7280'];
+                    const color = colors[data.archiveTypeDistribution.indexOf(type) % colors.length];
+
+                    // 如果是100%，绘制完整的圆
+                    if (percentage >= 99.9) {
+                      return (
+                        <circle
+                          key={index}
+                          cx="100"
+                          cy="100"
+                          r="80"
+                          fill={color}
+                          style={{ transition: 'opacity 0.2s', cursor: 'pointer' }}
+                        />
+                      );
+                    }
+
+                    const largeArcFlag = angle > 180 ? 1 : 0;
+                    const x1 = 100 + 80 * Math.cos(startAngleRad);
+                    const y1 = 100 + 80 * Math.sin(startAngleRad);
+                    const x2 = 100 + 80 * Math.cos(endAngleRad);
+                    const y2 = 100 + 80 * Math.sin(endAngleRad);
+
+                    const pathData = [
+                      `M 100 100`,
+                      `L ${x1} ${y1}`,
+                      `A 80 80 0 ${largeArcFlag} 1 ${x2} ${y2}`,
+                      'Z',
+                    ].join(' ');
+
+                    return (
+                      <path
+                        key={index}
+                        d={pathData}
+                        fill={color}
+                        style={{ transition: 'opacity 0.2s', cursor: 'pointer' }}
+                        onMouseEnter={(e) => {
+                          e.currentTarget.style.opacity = '0.8';
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.opacity = '1';
+                        }}
+                      />
+                    );
+                  });
+                })()}
               </svg>
             </div>
           </div>
 
           <Space direction="vertical" size="small" style={{ width: '100%', flex: 1 }}>
-            {data.archiveTypes.map((type, index) => (
-              <div
-                key={index}
-                style={{
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'center',
-                  fontSize: 14,
-                }}
-              >
-                <Space size="small">
-                  <span
-                    style={{
-                      display: 'inline-block',
-                      width: 12,
-                      height: 12,
-                      borderRadius: '50%',
-                      background: type.color,
-                    }}
-                  />
-                  <span>{type.name}</span>
-                </Space>
-                <span style={{ fontWeight: 500 }}>{type.count}</span>
-              </div>
-            ))}
+            {data.archiveTypeDistribution.map((type, index) => {
+              const colors = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#6b7280'];
+              const color = colors[index % colors.length];
+              return (
+                <div
+                  key={index}
+                  style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    fontSize: 14,
+                  }}
+                >
+                  <Space size="small">
+                    <span
+                      style={{
+                        display: 'inline-block',
+                        width: 12,
+                        height: 12,
+                        borderRadius: '50%',
+                        background: color,
+                      }}
+                    />
+                    <span>{type.name}</span>
+                  </Space>
+                  <span style={{ fontWeight: 500 }}>{type.count}</span>
+                </div>
+              );
+            })}
           </Space>
         </Card>
       </Col>
@@ -152,7 +190,7 @@ export default function DetailCharts({ data, projects }: DetailChartsProps) {
           }}
         >
           <Space direction="vertical" size="middle" style={{ width: '100%', flex: 1 }}>
-            {data.phaseArchives.map((phase, index) => (
+            {data.archiveByStage.map((phase, index) => (
               <div key={index}>
                 <div
                   style={{
@@ -163,7 +201,7 @@ export default function DetailCharts({ data, projects }: DetailChartsProps) {
                     fontSize: 14,
                   }}
                 >
-                  <span style={{ fontWeight: 500, color: '#262626' }}>{phase.phase}</span>
+                  <span style={{ fontWeight: 500, color: '#262626' }}>{phase.stage}</span>
                   <span style={{ fontWeight: 600, color: '#262626' }}>{phase.count}</span>
                 </div>
                 <Progress
@@ -262,13 +300,13 @@ export default function DetailCharts({ data, projects }: DetailChartsProps) {
         </Card>
       </Col>
 
-      {/* 高风险项目清单 */}
+      {/* 项目完成度分布 */}
       <Col xs={24} sm={12} lg={6} style={{ display: 'flex' }}>
         <Card
           title={
             <Space>
-              <WarningOutlined style={{ color: '#ff4d4f' }} />
-              <span>高风险项目清单</span>
+              <PieChartOutlined style={{ color: '#1890ff' }} />
+              <span>项目完成度分布</span>
             </Space>
           }
           style={{ width: '100%', display: 'flex', flexDirection: 'column' }}
@@ -280,64 +318,47 @@ export default function DetailCharts({ data, projects }: DetailChartsProps) {
             },
           }}
         >
-          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
-            {highRiskProjects.length > 0 ? (
-              <List
-                dataSource={highRiskProjects.slice(0, 5)}
-                renderItem={(project, index) => (
-                <List.Item
-                  style={{
-                    background: '#fff1f0',
-                    border: '1px solid #ffccc7',
-                    borderRadius: 8,
-                    marginBottom: 12,
-                    padding: 12,
-                  }}
-                >
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div
-                      style={{
-                        fontSize: 14,
-                        fontWeight: 500,
-                        color: '#262626',
-                        marginBottom: 4,
-                        overflow: 'hidden',
-                        textOverflow: 'ellipsis',
-                        whiteSpace: 'nowrap',
-                      }}
-                    >
-                      {project.name}
-                    </div>
-                    <div style={{ fontSize: 12, color: '#8c8c8c' }}>状态: {project.status}</div>
+          <Space direction="vertical" size="large" style={{ width: '100%', flex: 1 }}>
+            {(completenessData || []).map((item, index) => {
+              const total = (completenessData || []).reduce((sum, d) => sum + d.count, 0);
+              const percentage = total > 0 ? Math.round((item.count / total) * 100) : 0;
+
+              return (
+                <div key={index}>
+                  <div
+                    style={{
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                      marginBottom: 8,
+                      fontSize: 14,
+                    }}
+                  >
+                    <Space size="small">
+                      <span
+                        style={{
+                          display: 'inline-block',
+                          width: 12,
+                          height: 12,
+                          borderRadius: '50%',
+                          background: item.color,
+                        }}
+                      />
+                      <span style={{ fontWeight: 500, color: '#262626' }}>{item.name}</span>
+                    </Space>
+                    <span style={{ fontWeight: 600, color: '#262626' }}>{item.count} 个</span>
                   </div>
-                  <div style={{ textAlign: 'right', marginLeft: 12 }}>
-                    <div
-                      style={{
-                        fontSize: 18,
-                        fontWeight: 'bold',
-                        color: '#ff4d4f',
-                      }}
-                    >
-                      {project.completeness}%
-                    </div>
-                    <div style={{ fontSize: 12, color: '#ff4d4f' }}>完整度</div>
-                  </div>
-                </List.Item>
-              )}
-            />
-          ) : (
-              <Empty
-                image={<CheckCircleOutlined style={{ fontSize: 48, color: '#52c41a' }} />}
-                description={<span style={{ fontSize: 14, color: '#8c8c8c' }}>暂无高风险项目</span>}
-                style={{ padding: '32px 0', flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}
-              />
-            )}
-            {highRiskProjects.length > 5 && (
-              <Button type="link" block style={{ marginTop: 8, flexShrink: 0 }}>
-                查看全部 {highRiskProjects.length} 个高风险项目
-              </Button>
-            )}
-          </div>
+                  <Progress
+                    percent={percentage}
+                    strokeColor={item.color}
+                    showInfo={true}
+                    format={(percent) => `${percent}%`}
+                    size="small"
+                  />
+                </div>
+              );
+            })}
+          </Space>
         </Card>
       </Col>
     </Row>

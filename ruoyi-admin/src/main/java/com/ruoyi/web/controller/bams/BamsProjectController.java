@@ -28,8 +28,7 @@ import com.ruoyi.system.service.IBamsProjectService;
  */
 @RestController
 @RequestMapping("/bams/project")
-public class BamsProjectController extends BaseController
-{
+public class BamsProjectController extends BaseController {
     @Autowired
     private IBamsProjectService projectService;
 
@@ -38,8 +37,7 @@ public class BamsProjectController extends BaseController
      */
     @PreAuthorize("@ss.hasPermi('bams:project:list')")
     @GetMapping("/list")
-    public TableDataInfo list(BamsProject project)
-    {
+    public TableDataInfo list(BamsProject project) {
         startPage();
         List<BamsProject> list = projectService.selectProjectList(project);
         return getDataTable(list);
@@ -50,8 +48,7 @@ public class BamsProjectController extends BaseController
      */
     @PreAuthorize("@ss.hasPermi('bams:project:query')")
     @GetMapping("/{projectId}")
-    public AjaxResult getInfo(@PathVariable Long projectId)
-    {
+    public AjaxResult getInfo(@PathVariable Long projectId) {
         return success(projectService.selectProjectById(projectId));
     }
 
@@ -60,8 +57,7 @@ public class BamsProjectController extends BaseController
      */
     @PreAuthorize("@ss.hasPermi('bams:project:query')")
     @GetMapping("/code/{projectCode}")
-    public AjaxResult getByCode(@PathVariable String projectCode)
-    {
+    public AjaxResult getByCode(@PathVariable String projectCode) {
         return success(projectService.selectProjectByCode(projectCode));
     }
 
@@ -70,8 +66,7 @@ public class BamsProjectController extends BaseController
      */
     @PreAuthorize("@ss.hasPermi('bams:project:query')")
     @GetMapping("/stages/{projectId}")
-    public AjaxResult getStages(@PathVariable Long projectId)
-    {
+    public AjaxResult getStages(@PathVariable Long projectId) {
         List<BamsProjectStage> stages = projectService.selectProjectStages(projectId);
         return success(stages);
     }
@@ -82,10 +77,8 @@ public class BamsProjectController extends BaseController
     @PreAuthorize("@ss.hasPermi('bams:project:add')")
     @Log(title = "项目信息", businessType = BusinessType.INSERT)
     @PostMapping
-    public AjaxResult add(@Validated @RequestBody BamsProject project)
-    {
-        if (!projectService.checkProjectCodeUnique(project))
-        {
+    public AjaxResult add(@Validated @RequestBody BamsProject project) {
+        if (!projectService.checkProjectCodeUnique(project)) {
             return error("新增项目'" + project.getProjectName() + "'失败，项目编号已存在");
         }
         project.setCreateBy(getUsername());
@@ -98,10 +91,19 @@ public class BamsProjectController extends BaseController
     @PreAuthorize("@ss.hasPermi('bams:project:edit')")
     @Log(title = "项目信息", businessType = BusinessType.UPDATE)
     @PostMapping("/update")
-    public AjaxResult edit(@Validated @RequestBody BamsProject project)
-    {
+    public AjaxResult edit(@Validated @RequestBody BamsProject project) {
         project.setUpdateBy(getUsername());
         return toAjax(projectService.updateProject(project));
+    }
+
+    /**
+     * 获取项目的档案数量
+     */
+    @PreAuthorize("@ss.hasPermi('bams:project:query')")
+    @GetMapping("/archiveCount/{projectId}")
+    public AjaxResult getArchiveCount(@PathVariable Long projectId) {
+        int count = projectService.getArchiveCountByProjectId(projectId);
+        return success(count);
     }
 
     /**
@@ -110,8 +112,7 @@ public class BamsProjectController extends BaseController
     @PreAuthorize("@ss.hasPermi('bams:project:remove')")
     @Log(title = "项目信息", businessType = BusinessType.DELETE)
     @PostMapping("/delete")
-    public AjaxResult remove(@RequestBody Long[] projectIds)
-    {
+    public AjaxResult remove(@RequestBody Long[] projectIds) {
         return toAjax(projectService.deleteProjectByIds(projectIds));
     }
 
@@ -121,10 +122,20 @@ public class BamsProjectController extends BaseController
     @PreAuthorize("@ss.hasPermi('bams:project:export')")
     @Log(title = "项目信息", businessType = BusinessType.EXPORT)
     @PostMapping("/export")
-    public void export(HttpServletResponse response, @RequestBody BamsProject project)
-    {
+    public void export(HttpServletResponse response, @RequestBody BamsProject project) {
         List<BamsProject> list = projectService.selectProjectList(project);
         ExcelUtil<BamsProject> util = new ExcelUtil<BamsProject>(BamsProject.class);
         util.exportExcel(response, list, "项目信息数据");
+    }
+
+    /**
+     * 刷新项目统计数据
+     */
+    @PreAuthorize("@ss.hasPermi('bams:project:edit')")
+    @Log(title = "刷新项目统计", businessType = BusinessType.UPDATE)
+    @PostMapping("/refreshStatistics/{projectId}")
+    public AjaxResult refreshStatistics(@PathVariable Long projectId) {
+        projectService.updateProjectStatistics(projectId);
+        return success("统计数据已刷新");
     }
 }

@@ -150,9 +150,14 @@ export default defineConfig({
       projectName: 'swagger',
     },
   ],
-  mfsu: {
-    strategy: 'normal',
-  },
+  mfsu: false,
   esbuildMinifyIIFE: true,
   requestRecord: {},
+  /**
+   * @name 定义全局变量
+   * @description 用于在代码中访问配置的环境变量
+   */
+  define: {
+    AMAP_KEY: 'b2f7124f6242368a6bf36270b093b34e',
+  },
 });

@@ -116,4 +116,15 @@ export default [
       },
     ]
   },
+  {
+    name: 'project',
+    path: '/project',
+    routes: [
+      {
+        name: '项目详情',
+        path: '/project/detail/:id',
+        component: './Project/ProjectDetail',
+      },
+    ]
+  },
 ];

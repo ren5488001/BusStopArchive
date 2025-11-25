@@ -10,8 +10,7 @@ import org.springframework.web.multipart.MultipartFile;
  * @author ruoyi
  * @date 2025-11-19
  */
-public interface IBamsArchiveVersionService
-{
+public interface IBamsArchiveVersionService {
     /**
      * 查询档案版本
      *
@@ -55,21 +54,12 @@ public interface IBamsArchiveVersionService
     /**
      * 上传新版本文件
      *
-     * @param archiveId 档案ID
-     * @param file 文件
+     * @param archiveId     档案ID
+     * @param file          文件
      * @param versionRemark 版本说明
      * @return 结果
      */
     public BamsArchiveVersion uploadVersion(Long archiveId, MultipartFile file, String versionRemark);
-
-    /**
-     * 设置当前版本
-     *
-     * @param archiveId 档案ID
-     * @param versionId 版本ID
-     * @return 结果
-     */
-    public int setCurrentVersion(Long archiveId, Long versionId);
 
     /**
      * 修改版本说明

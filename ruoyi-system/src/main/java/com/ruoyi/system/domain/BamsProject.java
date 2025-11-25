@@ -78,9 +78,6 @@ public class BamsProject extends BaseEntity
     @Size(max = 1000, message = "项目描述不能超过1000个字符")
     private String projectDesc;
 
-    /** 状态（0正常 1停用） */
-    private String status;
-
     /** 删除标志（0代表存在 2代表删除） */
     private String delFlag;
 
@@ -207,16 +204,6 @@ public class BamsProject extends BaseEntity
         this.projectDesc = projectDesc;
     }
 
-    public String getStatus()
-    {
-        return status;
-    }
-
-    public void setStatus(String status)
-    {
-        this.status = status;
-    }
-
     public String getDelFlag()
     {
         return delFlag;
@@ -253,7 +240,6 @@ public class BamsProject extends BaseEntity
             .append("totalRequiredFiles", getTotalRequiredFiles())
             .append("actualArchivedFiles", getActualArchivedFiles())
             .append("projectDesc", getProjectDesc())
-            .append("status", getStatus())
             .append("delFlag", getDelFlag())
             .append("createBy", getCreateBy())
             .append("createTime", getCreateTime())

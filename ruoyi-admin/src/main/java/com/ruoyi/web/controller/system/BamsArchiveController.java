@@ -6,6 +6,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import com.ruoyi.common.utils.poi.ExcelUtil;
 import com.ruoyi.system.domain.BamsArchiveVersion;
 import com.ruoyi.system.service.IBamsArchiveVersionService;
+import com.ruoyi.system.service.IBamsProjectService;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -39,6 +40,9 @@ public class BamsArchiveController extends BaseController
 
     @Autowired
     private IBamsArchiveVersionService bamsArchiveVersionService;
+
+    @Autowired
+    private IBamsProjectService bamsProjectService;
 
     /**
      * 查询档案列表
@@ -97,6 +101,11 @@ public class BamsArchiveController extends BaseController
         int result = bamsArchiveService.insertBamsArchive(bamsArchive);
         if (result > 0)
         {
+            // 更新项目统计数据
+            if (bamsArchive.getProjectId() != null)
+            {
+                bamsProjectService.updateProjectStatistics(bamsArchive.getProjectId());
+            }
             return success(bamsArchive.getArchiveId());
         }
         return error("新增档案失败");
@@ -110,7 +119,25 @@ public class BamsArchiveController extends BaseController
     @PutMapping
     public AjaxResult edit(@RequestBody BamsArchive bamsArchive)
     {
-        return toAjax(bamsArchiveService.updateBamsArchive(bamsArchive));
+        // 获取修改前的档案信息（用于处理项目变更的情况）
+        BamsArchive oldArchive = bamsArchiveService.selectBamsArchiveByArchiveId(bamsArchive.getArchiveId());
+        Long oldProjectId = oldArchive != null ? oldArchive.getProjectId() : null;
+
+        int result = bamsArchiveService.updateBamsArchive(bamsArchive);
+        if (result > 0)
+        {
+            // 更新新项目的统计数据
+            if (bamsArchive.getProjectId() != null)
+            {
+                bamsProjectService.updateProjectStatistics(bamsArchive.getProjectId());
+            }
+            // 如果项目ID发生了变更，也要更新旧项目的统计数据
+            if (oldProjectId != null && !oldProjectId.equals(bamsArchive.getProjectId()))
+            {
+                bamsProjectService.updateProjectStatistics(oldProjectId);
+            }
+        }
+        return toAjax(result);
     }
 
     /**
@@ -121,7 +148,27 @@ public class BamsArchiveController extends BaseController
     @DeleteMapping("/{archiveIds}")
     public AjaxResult remove(@PathVariable Long[] archiveIds)
     {
-        return toAjax(bamsArchiveService.recycleBamsArchiveByIds(archiveIds));
+        // 获取需要更新统计的项目ID列表
+        List<Long> projectIds = new java.util.ArrayList<>();
+        for (Long archiveId : archiveIds)
+        {
+            BamsArchive archive = bamsArchiveService.selectBamsArchiveByArchiveId(archiveId);
+            if (archive != null && archive.getProjectId() != null && !projectIds.contains(archive.getProjectId()))
+            {
+                projectIds.add(archive.getProjectId());
+            }
+        }
+
+        int result = bamsArchiveService.recycleBamsArchiveByIds(archiveIds);
+        if (result > 0)
+        {
+            // 更新所有相关项目的统计数据
+            for (Long projectId : projectIds)
+            {
+                bamsProjectService.updateProjectStatistics(projectId);
+            }
+        }
+        return toAjax(result);
     }
 
     /**
@@ -132,7 +179,27 @@ public class BamsArchiveController extends BaseController
     @PutMapping("/restore/{archiveIds}")
     public AjaxResult restore(@PathVariable Long[] archiveIds)
     {
-        return toAjax(bamsArchiveService.restoreBamsArchiveByIds(archiveIds));
+        // 获取需要更新统计的项目ID列表
+        List<Long> projectIds = new java.util.ArrayList<>();
+        for (Long archiveId : archiveIds)
+        {
+            BamsArchive archive = bamsArchiveService.selectBamsArchiveByArchiveId(archiveId);
+            if (archive != null && archive.getProjectId() != null && !projectIds.contains(archive.getProjectId()))
+            {
+                projectIds.add(archive.getProjectId());
+            }
+        }
+
+        int result = bamsArchiveService.restoreBamsArchiveByIds(archiveIds);
+        if (result > 0)
+        {
+            // 更新所有相关项目的统计数据
+            for (Long projectId : projectIds)
+            {
+                bamsProjectService.updateProjectStatistics(projectId);
+            }
+        }
+        return toAjax(result);
     }
 
     /**
@@ -143,7 +210,27 @@ public class BamsArchiveController extends BaseController
     @DeleteMapping("/permanent/{archiveIds}")
     public AjaxResult deletePermanently(@PathVariable Long[] archiveIds)
     {
-        return toAjax(bamsArchiveService.deleteBamsArchiveByArchiveIds(archiveIds));
+        // 获取需要更新统计的项目ID列表（永久删除前）
+        List<Long> projectIds = new java.util.ArrayList<>();
+        for (Long archiveId : archiveIds)
+        {
+            BamsArchive archive = bamsArchiveService.selectBamsArchiveByArchiveId(archiveId);
+            if (archive != null && archive.getProjectId() != null && !projectIds.contains(archive.getProjectId()))
+            {
+                projectIds.add(archive.getProjectId());
+            }
+        }
+
+        int result = bamsArchiveService.deleteBamsArchiveByArchiveIds(archiveIds);
+        if (result > 0)
+        {
+            // 更新所有相关项目的统计数据
+            for (Long projectId : projectIds)
+            {
+                bamsProjectService.updateProjectStatistics(projectId);
+            }
+        }
+        return toAjax(result);
     }
 
     /**

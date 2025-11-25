@@ -1,9 +1,10 @@
 import { useState, useRef, useMemo, useCallback } from 'react';
 import { PageContainer, ProTable } from '@ant-design/pro-components';
-import { Button, message, Modal, Tag, Progress, Space } from 'antd';
-import { PlusOutlined, EditOutlined, DeleteOutlined, ExportOutlined } from '@ant-design/icons';
+import { Button, message, Modal, Progress } from 'antd';
+import { PlusOutlined, EditOutlined, DeleteOutlined, ExportOutlined, EyeOutlined } from '@ant-design/icons';
+import { history } from '@umijs/max';
 import type { ProColumns, ActionType } from '@ant-design/pro-components';
-import { getProjectList, deleteProject, type ProjectType } from '@/services/bams/project';
+import { getProjectList, deleteProject, getProjectArchiveCount, type ProjectType } from '@/services/bams/project';
 import { downLoadXlsx } from '@/utils/downloadfile';
 import ProjectForm from './components/ProjectForm';
 
@@ -30,22 +31,40 @@ export default function ProjectInfo() {
     actionRef.current?.reload();
   }, []);
 
-  const handleDelete = useCallback((record: ProjectType) => {
-    Modal.confirm({
-      title: '确认删除',
-      content: `确定要删除项目"${record.projectName}"吗？`,
-      okText: '确定',
-      cancelText: '取消',
-      onOk: async () => {
-        try {
-          await deleteProject([record.projectId!]);
-          message.success('删除成功');
-          actionRef.current?.reload();
-        } catch (error) {
-          message.error('删除失败');
-        }
-      },
-    });
+  const handleDelete = useCallback(async (record: ProjectType) => {
+    try {
+      // 先获取项目中的档案数量
+      const response = await getProjectArchiveCount(record.projectId!);
+      const archiveCount = response.data || 0;
+
+      Modal.confirm({
+        title: '确认删除',
+        content: (
+          <div>
+            <p>确定要删除项目"{record.projectName}"吗？</p>
+            {archiveCount > 0 && (
+              <p style={{ color: '#ff4d4f', marginTop: 8 }}>
+                <strong>警告：</strong>该项目中有 <strong>{archiveCount}</strong> 个档案，删除项目会同步删除所有档案！
+              </p>
+            )}
+          </div>
+        ),
+        okText: '确定',
+        cancelText: '取消',
+        okButtonProps: { danger: true },
+        onOk: async () => {
+          try {
+            await deleteProject([record.projectId!]);
+            message.success('删除成功');
+            actionRef.current?.reload();
+          } catch (error) {
+            message.error('删除失败');
+          }
+        },
+      });
+    } catch (error) {
+      message.error('获取项目信息失败');
+    }
   }, []);
 
   const handleExport = useCallback(async () => {
@@ -121,9 +140,20 @@ export default function ProjectInfo() {
     {
       title: '操作',
       valueType: 'option',
-      width: 150,
+      width: 200,
       fixed: 'right',
       render: (_, record) => [
+        <Button
+          key="detail"
+          type="link"
+          size="small"
+          icon={<EyeOutlined />}
+          onClick={() => {
+            history.push(`/project/detail/${record.projectId}`);
+          }}
+        >
+          详情
+        </Button>,
         <Button
           key="edit"
           type="link"

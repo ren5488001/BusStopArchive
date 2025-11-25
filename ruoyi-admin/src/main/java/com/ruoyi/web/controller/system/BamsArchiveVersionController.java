@@ -79,16 +79,6 @@ public class BamsArchiveVersionController extends BaseController {
     }
 
     /**
-     * 设置当前版本
-     */
-    @PreAuthorize("@ss.hasPermi('system:archive:edit')")
-    @Log(title = "档案版本", businessType = BusinessType.UPDATE)
-    @PutMapping("/setCurrent/{archiveId}/{versionId}")
-    public AjaxResult setCurrent(@PathVariable Long archiveId, @PathVariable Long versionId) {
-        return toAjax(bamsArchiveVersionService.setCurrentVersion(archiveId, versionId));
-    }
-
-    /**
      * 修改版本说明
      */
     @PreAuthorize("@ss.hasPermi('system:archive:edit')")
