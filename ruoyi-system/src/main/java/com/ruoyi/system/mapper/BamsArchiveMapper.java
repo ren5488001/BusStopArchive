@@ -97,4 +97,48 @@ public interface BamsArchiveMapper
                                   @Param("currentVersion") String currentVersion,
                                   @Param("versionCount") Integer versionCount,
                                   @Param("fileSize") Long fileSize);
+
+    /**
+     * 统计档案总数（排除已删除）
+     *
+     * @return 档案总数
+     */
+    Integer countTotalArchives();
+
+    /**
+     * 获取档案类型分布
+     *
+     * @return 档案类型分布列表
+     */
+    List<java.util.Map<String, Object>> getArchiveTypeDistribution();
+
+    /**
+     * 获取按阶段归档数量
+     *
+     * @return 按阶段归档数量列表
+     */
+    List<java.util.Map<String, Object>> getArchiveByStage();
+
+    /**
+     * 获取近半年新增趋势
+     *
+     * @return 近半年新增趋势列表
+     */
+    List<java.util.Map<String, Object>> getMonthlyTrend();
+
+    /**
+     * 统计指定项目的档案数量（排除已删除）
+     *
+     * @param projectId 项目ID
+     * @return 档案数量
+     */
+    int countArchivesByProjectId(@Param("projectId") Long projectId);
+
+    /**
+     * 逻辑删除指定项目的所有档案
+     *
+     * @param projectId 项目ID
+     * @return 结果
+     */
+    int deleteArchivesByProjectId(@Param("projectId") Long projectId);
 }

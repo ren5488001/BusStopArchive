@@ -55,4 +55,20 @@ public interface IBamsProjectService
      * 查询项目的阶段列表
      */
     public List<BamsProjectStage> selectProjectStages(Long projectId);
+
+    /**
+     * 更新项目和阶段的统计数据
+     * 包括：已归档文件数、完整度
+     *
+     * @param projectId 项目ID
+     */
+    public void updateProjectStatistics(Long projectId);
+
+    /**
+     * 获取项目的档案数量
+     *
+     * @param projectId 项目ID
+     * @return 档案数量
+     */
+    public int getArchiveCountByProjectId(Long projectId);
 }

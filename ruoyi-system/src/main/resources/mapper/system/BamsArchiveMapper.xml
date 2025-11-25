@@ -199,4 +199,82 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             #{archiveId}
         </foreach>
     </delete>
+
+    <!-- 驾驶舱统计查询 -->
+    <select id="countTotalArchives" resultType="Integer">
+        select count(*) from bams_archive where del_flag = '0'
+    </select>
+
+    <select id="getArchiveTypeDistribution" resultType="java.util.Map">
+        select
+            d.dict_label as name,
+            IFNULL(a.archive_count, 0) as count
+        from sys_dict_data d
+        left join (
+            select archive_category, count(*) as archive_count
+            from bams_archive
+            where del_flag = '0'
+            group by archive_category
+        ) a on d.dict_value COLLATE utf8mb4_unicode_ci = a.archive_category
+        where d.dict_type = 'bams_archives_classification'
+            and d.status = '0'
+        order by d.dict_sort
+    </select>
+
+    <select id="getArchiveByStage" resultType="java.util.Map">
+        select
+            d.dict_label as stage,
+            IFNULL(a.archive_count, 0) as count
+        from sys_dict_data d
+        left join (
+            select stage, count(*) as archive_count
+            from bams_archive
+            where del_flag = '0'
+            group by stage
+        ) a on d.dict_label COLLATE utf8mb4_unicode_ci = a.stage COLLATE utf8mb4_unicode_ci
+        where d.dict_type = 'bams_project_phase'
+            and d.status = '0'
+        order by d.dict_sort
+    </select>
+
+    <select id="getMonthlyTrend" resultType="java.util.Map">
+        WITH RECURSIVE months AS (
+            SELECT DATE_FORMAT(DATE_SUB(NOW(), INTERVAL 5 MONTH), '%Y-%m') as month
+            UNION ALL
+            SELECT DATE_FORMAT(DATE_ADD(STR_TO_DATE(CONCAT(month, '-01'), '%Y-%m-%d'), INTERVAL 1 MONTH), '%Y-%m')
+            FROM months
+            WHERE month &lt; DATE_FORMAT(NOW(), '%Y-%m')
+        )
+        SELECT
+            m.month,
+            IFNULL(a.archive_count, 0) as count
+        FROM months m
+        LEFT JOIN (
+            SELECT
+                DATE_FORMAT(create_time, '%Y-%m') as month,
+                count(*) as archive_count
+            FROM bams_archive
+            WHERE del_flag = '0'
+                AND create_time >= DATE_SUB(NOW(), INTERVAL 6 MONTH)
+            GROUP BY DATE_FORMAT(create_time, '%Y-%m')
+        ) a ON m.month = a.month
+        ORDER BY m.month ASC
+    </select>
+
+    <!-- 统计指定项目的档案数量 -->
+    <select id="countArchivesByProjectId" resultType="int">
+        select count(*)
+        from bams_archive
+        where project_id = #{projectId}
+        and del_flag = '0'
+    </select>
+
+    <!-- 逻辑删除指定项目的所有档案 -->
+    <update id="deleteArchivesByProjectId">
+        update bams_archive
+        set del_flag = '2'
+        where project_id = #{projectId}
+        and del_flag = '0'
+    </update>
+
 </mapper>
